@@ -18,6 +18,12 @@
 
 浏览器直接打开 index.html，或放到任意静态托管。
 
+## 浏览器插件（常驻 + 后台提醒）
+
+`extension/` 目录是一个 Chrome / Edge 扩展（MV3）：加载后工作台常驻侧边栏，
+关掉网页也能收到「该发了 / 已逾期」系统通知，工具栏图标显示今日待处理数。
+安装与说明见 [`extension/README.md`](extension/README.md)。
+
 ## 数据说明
 
 - 所有数据在浏览器本地（localStorage），不上传

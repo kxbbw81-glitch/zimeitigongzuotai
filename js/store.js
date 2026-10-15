@@ -210,6 +210,16 @@
          卸载前不该再写回去把新数据冲掉。 */
       db.__t = Date.now();
       localStorage.setItem(DB_KEY, JSON.stringify(db));
+      /* ---------- 浏览器插件数据桥接 ----------
+         插件的后台提醒读不到网页的 localStorage，save 之后顺路广播一份
+         快照：iframe 场景（侧边栏）由父页面收，标签页场景由注入的
+         content script 收，两者再转交给后台存进 chrome.storage。
+         非插件环境下没有监听方，这条消息无人接收，无任何副作用。 */
+      try {
+        const syncMsg = { source: 'mw-workbench', type: 'mw-sync', db: db };
+        if (window.parent && window.parent !== window) window.parent.postMessage(syncMsg, '*');
+        window.postMessage(syncMsg, '*');
+      } catch (e) { /* 桥接失败不影响主流程 */ }
     } catch (e) { console.warn('保存失败', e); }
   };
 
