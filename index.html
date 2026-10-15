@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>自媒体工作台 MediaWorkbench</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%234f46e5'/%3E%3Cpath d='M12 4l2 5.5L19.5 12 14 13.5 12 19l-2-5.5L4.5 12 10 10.5z' fill='white'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<div id="app">
+  <aside id="sidebar"></aside>
+  <div id="main">
+    <header id="topbar">
+      <div class="tb-left">
+        <div class="tb-title" id="tb-title">今日计划</div>
+        <div class="tb-sub" id="tb-sub"></div>
+      </div>
+      <div class="tb-right">
+        <span class="tb-date" id="tb-date"></span>
+        <button class="icon-btn" id="help-btn" title="使用指南"></button>
+        <div class="qa-wrap">
+          <button class="btn primary" id="qa-btn">+ 快速创建</button>
+          <div class="qa-menu" id="qa-menu">
+            <button onclick="MW.act.openInspirationModal()">捕捉灵感</button>
+            <button onclick="MW.act.openTopicModal()">新建选题</button>
+            <button onclick="MW.act.openContentModal()">添加排期</button>
+            <button onclick="MW.act.openTodoModal()">添加待办</button>
+            <button onclick="MW.act.openFinanceModal('', 'income')">记一笔订单</button>
+            <button onclick="MW.act.openFinanceModal('', 'expense')">记一笔支出</button>
+            <button onclick="MW.act.aiFillIdeas()">AI 补选题</button>
+            <button onclick="MW.act.aiWeekPlanModal()">AI 补排期</button>
+            <button onclick="MW.goto('#/accounts');MW.act.editAccount('', { ai: true })">AI 识别导入账号</button>
+          </div>
+        </div>
+      </div>
+    </header>
+    <main id="view"></main>
+  </div>
+</div>
+<div id="modal-root"></div>
+<div id="toast-root"></div>
+
+<script src="js/store.js"></script>
+<script src="js/icons.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/charts.js"></script>
+<script src="js/ai-engine.js"></script>
+<script src="js/assets-store.js"></script>
+<script src="js/views/today.js"></script>
+<script src="js/views/accounts.js"></script>
+<script src="js/views/board.js"></script>
+<script src="js/views/calendar.js"></script>
+<script src="js/views/publish.js"></script>
+<script src="js/views/ideas.js"></script>
+<script src="js/views/ai.js"></script>
+<script src="js/views/assets.js"></script>
+<script src="js/views/competitors.js"></script>
+<script src="js/views/review.js"></script>
+<script src="js/views/todos.js"></script>
+<script src="js/views/finance.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
