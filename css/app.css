@@ -141,6 +141,15 @@ button { font-family: inherit; }
 }
 .icon-btn:hover { background: var(--bg2); color: var(--text); }
 .icon-btn.sm { width: 26px; height: 26px; }
+/* 汉堡按钮只服务窄屏抽屉，桌面端隐藏（在 ≤900 媒体查询里放出来） */
+#menu-btn { display: none; }
+/* 抽屉遮罩：桌面端常驻惰性（透明 + 不接事件），窄屏由 body.side-open 激活 */
+.side-mask {
+  position: fixed; inset: 0; z-index: 190;
+  background: rgba(15, 23, 42, 0.4);
+  opacity: 0; pointer-events: none; transition: opacity 0.22s;
+}
+body.side-open .side-mask { opacity: 1; pointer-events: auto; }
 
 .seg { display: inline-flex; background: var(--bg2); border-radius: 10px; padding: 3px; gap: 2px; flex-wrap: wrap; }
 .seg-btn {
@@ -1384,16 +1393,45 @@ body.dragging { cursor: copy; }
 
 /* ---------- 窄屏适配 ---------- */
 @media (max-width: 1180px) {
-  .today-grid, .ideas-grid, .ai-grid, .todo-grid { grid-template-columns: 1fr; }
+  /* minmax(0,1fr) 而不是 1fr：1fr 的 auto 最小值会被 nowrap 内容撑开，
+     窄屏下列宽等于内容宽度，直接顶出文档（今日页 / 待办实测溢出 200+） */
+  .today-grid, .ideas-grid, .ai-grid, .todo-grid { grid-template-columns: minmax(0, 1fr); }
+  /* 日历 7 列在 1024 宽下也被 min-content 撑爆（132×7=924 > 可用宽度），
+     同样显式允许收缩 */
+  .cal-grid { min-width: 0; grid-template-columns: repeat(7, minmax(0, 1fr)); }
   .chart-grid { grid-template-columns: 1fr; }
   .stat-row { grid-template-columns: repeat(2, 1fr); }
 }
 @media (max-width: 900px) {
-  #sidebar { width: 62px; padding: 16px 8px; }
-  .brand-text, .nav-item span, .nav-group-label, .side-foot, .acc-switch { display: none; }
-  .nav-item { justify-content: center; padding: 10px; }
-  .nav-badge { display: none !important; }
+  /* 侧栏收成抽屉：默认滑出屏幕，汉堡按钮唤出，点遮罩 / 按 Esc / 点导航自动关。
+     抽屉 264px 宽，完整导航（分组标签、账号视角切换器、数据管理）都放得下——
+     旧的「62px 图标条」会把账号切换和数据管理整个藏掉，核心功能够不着，弃用。 */
+  #sidebar {
+    position: fixed; left: 0; top: 0; bottom: 0; width: 264px;
+    transform: translateX(-105%); transition: transform 0.22s ease;
+    z-index: 200; box-shadow: 0 12px 48px rgba(15, 23, 42, 0.18);
+  }
+  body.side-open #sidebar { transform: none; }
+  #menu-btn { display: inline-flex; }
   #view { padding: 16px 14px 60px; }
+  #topbar { padding: 0 14px; }
+
+  /* nowrap 的按钮行是窄屏溢出的第二大来源（发布页实测 +143）：
+     卡片头、发布行、节奏行、灵感行全部允许换行堆叠 */
+  .card-head { flex-wrap: wrap; }
+  .card-title { min-width: 0; }
+  .card-extra { flex-wrap: wrap; }
+  .pub-row { flex-wrap: wrap; }
+  .pub-ops { flex-shrink: 1; width: 100%; justify-content: flex-start; margin-top: 6px; }
+  .cad-row { flex-wrap: wrap; }
+  .node-row { flex-wrap: wrap; }
+  /* 日历头部（月份标题 + 上/下月 + 视图切换 + 智能排期）按钮多，允许换行 */
+  .cal-nav { flex-wrap: wrap; }
+  /* 日历 7 列：min-content 会把网格撑到 900+ 宽，窄屏显式允许收缩到屏宽 */
+  .cal-grid { min-width: 0; grid-template-columns: repeat(7, minmax(0, 1fr)); }
+  .cal-cell, .cal-wd { min-width: 0; }
+
+  /* 账号页原有堆叠规则保留 */
   .kans { flex-wrap: wrap; min-height: 0; }
   .kan-col { min-width: calc(50% - 6px); }
   .acc-head { flex-direction: column; gap: 12px; }
@@ -1403,4 +1441,16 @@ body.dragging { cursor: copy; }
   .af-write { display: none; }
   .ah-item { padding: 4px 10px; }
   .ah-item:first-child { padding-left: 0; }
+}
+
+/* ---------- 手机（≤640px） ---------- */
+@media (max-width: 640px) {
+  #view { padding: 14px 12px 56px; }
+  /* 顶栏让位给汉堡按钮：日期芯片和副标题收掉，标题降一档 */
+  .tb-date, .tb-sub { display: none; }
+  .tb-title { font-size: 15px; }
+  /* 看板单列：窄屏横向拖六列不如一列看全 */
+  .kan-col { min-width: 100%; }
+  .stat-row { gap: 9px; }
+  .card { padding: 13px 14px; }
 }

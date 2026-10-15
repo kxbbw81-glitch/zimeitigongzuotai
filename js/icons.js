@@ -48,7 +48,8 @@
     palette: '<path d="M12 21a9 9 0 1 1 9-9c0 2.2-2 3.5-4 3.5h-1.6a2 2 0 0 0-1.4 3.4A2 2 0 0 1 12 21Z"/><circle cx="7.6" cy="11.4" r="1"/><circle cx="10.2" cy="7.6" r="1"/><circle cx="15" cy="8" r="1"/>',
     paste: '<rect x="9" y="3" width="6" height="4" rx="1.5"/><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>',
     down: '<path d="M6 9l6 6 6-6"/>',
-    scan: '<path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M3 12h18"/>'
+    scan: '<path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M3 12h18"/>',
+    menu: '<path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/>'
   };
 
   MW.icon = function (name, size, cls) {

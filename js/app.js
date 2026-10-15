@@ -254,10 +254,31 @@
   MW.render = route;
   MW.goto = function (h) { location.hash = h; };
 
+  /* ---------- 移动端抽屉（≤900px 时侧栏滑出） ---------- */
+  function bindDrawer() {
+    const btn = document.getElementById('menu-btn');
+    const mask = document.getElementById('side-mask');
+    if (!btn || !mask) return;
+    btn.innerHTML = MW.icon('menu', 18);
+    const close = function () { document.body.classList.remove('side-open'); };
+    btn.onclick = function (e) {
+      e.stopPropagation();
+      document.body.classList.toggle('side-open');
+    };
+    mask.onclick = close;
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
+    /* 抽屉里点了导航就合上——不然内容被抽屉挡着，还得再点一次遮罩 */
+    document.getElementById('sidebar').addEventListener('click', function (e) {
+      const a = e.target && e.target.closest ? e.target.closest('.nav-item') : null;
+      if (a) close();
+    });
+  }
+
   /* ---------- 启动 ---------- */
   function init() {
     buildSidebar();
     bindQuickAdd();
+    bindDrawer();
     document.getElementById('help-btn').innerHTML = MW.icon('help', 17);
     document.getElementById('help-btn').onclick = showHelp;
     document.getElementById('tb-date').textContent = MW.dateStr() + ' ' + MW.weekdayCN(MW.dateStr());
