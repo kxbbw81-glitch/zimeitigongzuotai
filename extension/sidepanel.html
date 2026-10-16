@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>自媒体工作台</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    display: flex; flex-direction: column;
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: #f5f6fa; color: #1a1d29; font-size: 13px; overflow: hidden;
+  }
+  .bar {
+    display: flex; align-items: center; gap: 8px; flex-shrink: 0;
+    padding: 8px 10px; background: #fff; border-bottom: 1px solid #e7e9f2;
+  }
+  .bar .logo { width: 22px; height: 22px; border-radius: 7px; background: linear-gradient(135deg, #4f46e5, #8b5cf6); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; flex-shrink: 0; }
+  .bar .t { flex: 1; font-size: 12.5px; font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .bar .t span { font-weight: 400; color: #9aa0b4; font-size: 11px; }
+  .bar button {
+    border: 0; border-radius: 7px; padding: 5px 9px; font-size: 11.5px; font-weight: 600;
+    background: #eef2ff; color: #4f46e5; cursor: pointer; font-family: inherit; flex-shrink: 0;
+  }
+  .bar button:hover { background: #e0e7ff; }
+  .frame-wrap { flex: 1; position: relative; min-height: 0; }
+  iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: #fff; }
+  .mask {
+    position: absolute; inset: 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 10px;
+    background: #f5f6fa; text-align: center; padding: 24px;
+  }
+  .mask.hide { display: none; }
+  .mask .ic { font-size: 28px; }
+  .mask b { font-size: 13.5px; }
+  .mask p { font-size: 12px; color: #9aa0b4; line-height: 1.7; max-width: 260px; }
+  .mask button {
+    border: 0; border-radius: 8px; padding: 8px 16px; font-size: 12.5px; font-weight: 600;
+    background: #4f46e5; color: #fff; cursor: pointer; font-family: inherit;
+  }
+</style>
+</head>
+<body>
+  <div class="bar">
+    <div class="logo">工</div>
+    <div class="t">自媒体工作台 <span>· 数据存在浏览器本地</span></div>
+    <button id="btn-reload">刷新</button>
+    <button id="btn-tab">新标签页打开</button>
+  </div>
+  <div class="frame-wrap">
+    <iframe id="frame" src="https://media-workbench-64130.app.workbuddy.host/" title="自媒体工作台"></iframe>
+    <div class="mask hide" id="mask">
+      <div class="ic">📡</div>
+      <b>工作台加载失败</b>
+      <p>可能是网络不稳定。重试一下，或在新标签页里打开；数据在本机浏览器里，不会丢。</p>
+      <button id="btn-retry">重新加载</button>
+    </div>
+  </div>
+  <script src="sidepanel.js"></script>
+</body>
+</html>
