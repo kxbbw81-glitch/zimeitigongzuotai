@@ -1,23 +1,36 @@
 /* ============================================================
-   自媒体工作台 · 数据层（localStorage 本地存储 + 示例数据）
+   社媒工作台 · 数据层（localStorage 本地存储 + 示例数据）
+   定位：外贸社媒 + 自媒体一体化工作台
    ============================================================ */
 (function () {
   const MW = (window.MW = window.MW || {});
   const DB_KEY = 'mw_db_v1';
 
-  /* ---------- 平台配置 ---------- */
+  /* ---------- 平台配置 ----------
+     region 决定账号表单里下拉怎么分组：cn 国内平台 / global 国外平台（外贸社媒主阵地）。
+     『自定义平台』不是表里的一项：用户自建的平台存在账号自己的
+     platformName / platformColor 上（platform 键为 'custom'），
+     读取一律走 MW.pfOf，别直接查表——查表会把自定义平台显示成「其他」。 */
   MW.PLATFORMS = {
-    xhs:   { name: '小红书',   color: '#ff2442' },
-    dy:    { name: '抖音',     color: '#161823' },
-    gzh:   { name: '公众号',   color: '#07c160' },
-    bili:  { name: 'B站',      color: '#fb7299' },
-    sph:   { name: '视频号',   color: '#fa9d3b' },
-    x:     { name: 'X',        color: '#111827' },
-    li:    { name: 'LinkedIn', color: '#0a66c2' },
-    zhihu: { name: '知乎',     color: '#0084ff' },
-    wb:    { name: '微博',     color: '#e6162d' },
-    yt:    { name: 'YouTube',  color: '#ff0000' },
-    other: { name: '其他',     color: '#6b7280' }
+    xhs:   { name: '小红书',   color: '#ff2442', region: 'cn' },
+    dy:    { name: '抖音',     color: '#161823', region: 'cn' },
+    gzh:   { name: '公众号',   color: '#07c160', region: 'cn' },
+    bili:  { name: 'B站',      color: '#fb7299', region: 'cn' },
+    sph:   { name: '视频号',   color: '#fa9d3b', region: 'cn' },
+    zhihu: { name: '知乎',     color: '#0084ff', region: 'cn' },
+    wb:    { name: '微博',     color: '#e6162d', region: 'cn' },
+    yt:    { name: 'YouTube',  color: '#ff0000', region: 'global' },
+    tt:    { name: 'TikTok',   color: '#010101', region: 'global' },
+    ins:   { name: 'Instagram',color: '#e1306c', region: 'global' },
+    fb:    { name: 'Facebook', color: '#1877f2', region: 'global' },
+    x:     { name: 'X',        color: '#111827', region: 'global' },
+    li:    { name: 'LinkedIn', color: '#0a66c2', region: 'global' },
+    pin:   { name: 'Pinterest',color: '#e60023', region: 'global' },
+    th:    { name: 'Threads',  color: '#000000', region: 'global' },
+    rd:    { name: 'Reddit',   color: '#ff4500', region: 'global' },
+    tg:    { name: 'Telegram', color: '#229ed9', region: 'global' },
+    wa:    { name: 'WhatsApp', color: '#25d366', region: 'global' },
+    other: { name: '其他',     color: '#6b7280', region: 'other' }
   };
 
   /* ---------- 发布前检查项 ----------
@@ -40,12 +53,42 @@
     gzh:  '排版要留白，小标题加粗，开头 100 字决定完读率，记得开原创',
     bili: '封面 16:9 且人脸清楚，标题带关键词方便搜索，简介放时间轴',
     sph:  '视频号靠社交推荐，标题要能引发转发，时长控制在 1 分钟内',
-    x:    '英文 280 字以内，带 1-2 个 hashtag，配图能明显提升互动',
-    li:   '专业向，开头给结论，段落短，结尾放一个开放式问题引讨论',
     zhihu: '结构化回答，先给结论再展开，适当引用数据增强可信度',
     wb:   '热搜话题要带上，九宫格图比单图数据好，转发抽奖能拉互动',
     yt:   '缩略图人脸 + 大字幕，标题含搜索词，前 15 秒别放片头',
+    tt:   '前 3 秒钩子，竖屏拍摄，蹭热门音乐能加权，文案简短带 1-2 个标签',
+    ins:  'Reels 流量大于单图，封面统一风格，正文第一句就是钩子，别忘了位置标签',
+    fb:   '群组比主页更适合获客，帖子带提问引评论，视频务必配字幕',
+    x:    '英文 280 字以内，带 1-2 个 hashtag，配图能明显提升互动',
+    li:   '专业向，开头给结论，段落短，结尾放一个开放式问题引讨论',
+    pin:  '图用竖版 2:3，标题带搜索词，描述埋关键词，一条 Pin 能躺很久带来长尾',
+    th:   '观点短平快，紧跟话题标签，适合发外链给独立站引流',
+    rd:   '先看子版块规则再发，价值优先、软广慎入，标题说清读者能得到什么',
+    tg:   '群发频率别太高，长文用格式化排版，置顶消息放核心链接',
+    wa:   'Business 状态 24 小时过期，适合发新品快讯，深度沟通走一对一',
     other: '按平台习惯检查一遍封面、标题和话题标签'
+  };
+
+  /* ---------- 平台信息统一出口 ----------
+     全站展示平台名 / 平台色只走这两个函数，不要再直接 MW.PLATFORMS[key]：
+     账号级用 MW.pfOf(账号对象)，支持自定义平台；
+     只有 key 的场景（草稿、热点、竞品）用 MW.pfName(key, 对象)。
+     自定义平台 = 用户在账号上自建的平台（platform: 'custom'），
+     名字和颜色存在账号自己的 platformName / platformColor 上。 */
+  MW.pfOf = function (a) {
+    if (!a) return { name: '未指定账号', color: '#9aa0b4' };
+    const p = MW.PLATFORMS[a.platform];
+    if (p) return { name: p.name, color: p.color };
+    if (a.platform === 'custom') {
+      return { name: a.platformName || '自定义平台', color: a.platformColor || '#6b7280' };
+    }
+    /* 脏数据兜底：老库里的 platform 键已不存在时，把键当名字显示，页面不白屏 */
+    return { name: a.platform || '其他', color: '#9aa0b4' };
+  };
+  MW.pfName = function (key, obj) {
+    if (key === 'custom') return (obj && obj.platformName) || '自定义平台';
+    const p = MW.PLATFORMS[key];
+    return p ? p.name : (key || '其他');
   };
 
   /* ---------- 内容类型（按 6:2:1:1 配比） ---------- */
@@ -388,7 +431,7 @@
   };
 
   /* ============================================================
-     当前账号视角：博主是按「账号」思考的，不是按模块
+     当前账号视角：运营者是按「账号」思考的，不是按模块
      ============================================================ */
   const ACC_KEY = 'mw_cur_acc_v1';
   let curAcc = 'all';
@@ -769,7 +812,7 @@
     }
     function accColor(accId) {
       const a = MW.accOf(accId);
-      return a ? (MW.PLATFORMS[a.platform] || {}).color || '#9aa0b4' : '#9aa0b4';
+      return a ? MW.pfOf(a).color : '#9aa0b4';
     }
     function accName(accId) {
       const a = MW.accOf(accId);
@@ -1051,7 +1094,16 @@
           followers: 540, goalFollowers: 2000, goalPosts: 12, status: 'active', createdAt: '2026-09-18',
           cadence: 2,
           snapshots: [{ date: '2026-09-21', followers: 390 }, { date: '2026-09-28', followers: 442 },
-            { date: '2026-10-05', followers: 496 }, { date: '2026-10-12', followers: 540 }] }
+            { date: '2026-10-05', followers: 496 }, { date: '2026-10-12', followers: 540 }] },
+        { id: 'acc_tt', platform: 'tt', accountId: 'factorydirect3d', name: 'Factory Direct 3D', style: '工厂实拍 · 英文短剧',
+          positioning: '3D 打印工厂直销，内容服务海外小 B 买家', focus: ['工厂实拍', '耗材', '外贸获客'],
+          audience: '海外小批发商、3D 打印农场主与创客空间',
+          mix: { case: 45, method: 15, tool: 10, review: 30 },
+          tone: '英文为主，实拍配参数，突出产能与交期',
+          followers: 210, goalFollowers: 1000, goalPosts: 16, status: 'active', createdAt: '2026-09-22',
+          cadence: 4,
+          snapshots: [{ date: '2026-09-28', followers: 96 }, { date: '2026-10-05', followers: 148 },
+            { date: '2026-10-12', followers: 210 }] }
       ],
       competitors: [
         { id: 'cp1', platform: 'xhs', name: 'AI 实操派', accountId: 'ai_shicaopai', category: 'AI工具', followers: 52300, freq: '日更',
@@ -1077,7 +1129,8 @@
         { id: 'hs2', title: 'AI 数字人直播带货成本再降', category: 'AI电商', platform: 'xhs', heat: 88, note: '可结合外贸直播场景讲', createdAt: '2026-10-12' },
         { id: 'hs3', title: '3D 打印建筑技术规范出台', category: '3D打印', platform: 'wb', heat: 74, note: '蹭政策热点，专业解读向', createdAt: '2026-10-11' },
         { id: 'hs4', title: 'AI 客服替代潮：中小企业实测报告', category: 'AI职场', platform: 'zhihu', heat: 69, note: 'CRM 场景可以结合', createdAt: '2026-10-11' },
-        { id: 'hs5', title: '双 11 商家 AI 素材生成量翻 3 倍', category: 'AI电商', platform: 'xhs', heat: 82, note: '电商人必看，案例向', createdAt: '2026-10-10' }
+        { id: 'hs5', title: '双 11 商家 AI 素材生成量翻 3 倍', category: 'AI电商', platform: 'xhs', heat: 82, note: '电商人必看，案例向', createdAt: '2026-10-10' },
+        { id: 'hs6', title: 'TikTok 工厂直销内容玩法盘点', category: '外贸跨境', platform: 'tt', heat: 79, note: '适合做工厂实拍二创', createdAt: '2026-10-11' }
       ],
       topics: [
         { id: 'tp1', title: '外贸 CRM 第 3 次重构，我踩过的 7 个坑', accountId: 'acc_xhs1', type: 'case', stage: 'idea', priority: 'high', due: '', owner: '我', focus: '外贸CRM', note: '结合 NAS 部署成本数据讲', createdAt: '2026-10-10' },
@@ -1091,7 +1144,8 @@
         { id: 'tp9', title: '3D 打印机海外询盘转化：话术模板开源', accountId: 'acc_li', type: 'case', stage: 'idea', priority: 'high', due: '2026-10-20', owner: '合伙人', focus: '外贸获客', createdAt: '2026-10-11' },
         { id: 'tp10', title: '耗材外贸报价单怎么做才专业（附模板）', accountId: 'acc_li', type: 'tool', stage: 'idea', priority: 'mid', due: '', owner: '我', focus: '外贸获客', createdAt: '2026-10-08' },
         { id: 'tp11', title: 'AI 时代，外贸业务员还值钱吗', accountId: 'acc_x', type: 'case', stage: 'idea', priority: 'mid', due: '', owner: '我', focus: 'AI', createdAt: '2026-10-09' },
-        { id: 'tp12', title: '一周出海信号：我关注的 5 个变化', accountId: 'acc_x', type: 'method', stage: 'idea', priority: 'high', due: '', owner: '我', focus: '跨境电商', createdAt: '2026-10-12' }
+        { id: 'tp12', title: '一周出海信号：我关注的 5 个变化', accountId: 'acc_x', type: 'method', stage: 'idea', priority: 'high', due: '', owner: '我', focus: '跨境电商', createdAt: '2026-10-12' },
+        { id: 'tp13', title: 'TikTok 工厂号冷启动：第一条拍什么', accountId: 'acc_tt', type: 'method', stage: 'idea', priority: 'mid', due: '', owner: '我', focus: '工厂实拍', note: '参考同行对标 CrossBorder Wang 的拍法', createdAt: '2026-10-11' }
       ],
       contents: [
         { id: 'ct1', title: '5 个 AI 抠图工具横评，第 3 个免费还能打', accountId: 'acc_xhs1', platform: 'xhs', date: '2026-10-12', time: '18:00', status: 'scheduled', topicId: '', focus: 'AI工具实操', metrics: null, note: '封面用 A 版', createdAt: '2026-10-10' },
@@ -1107,7 +1161,8 @@
         { id: 'ct9', title: '为什么我把外贸 CRM 搬到了 NAS', accountId: 'acc_gzh', platform: 'gzh', date: '2026-10-06', time: '20:00', status: 'published', topicId: '', focus: 'CRM',
           metrics: { views: 2100, likes: 86, comments: 19, collects: 97, shares: 12, newFollowers: 14 }, note: '', createdAt: '2026-10-03' },
         { id: 'ct10', title: 'AI 模特换装：3 分钟出图实操', accountId: 'acc_xhs2', platform: 'xhs', date: '2026-10-05', time: '12:00', status: 'published', topicId: '', focus: 'AI模特',
-          metrics: { views: 980, likes: 64, comments: 11, collects: 38, shares: 6, newFollowers: 9 }, note: '', createdAt: '2026-10-02' }
+          metrics: { views: 980, likes: 64, comments: 11, collects: 38, shares: 6, newFollowers: 9 }, note: '', createdAt: '2026-10-02' },
+        { id: 'ct11', title: 'Print farm tour: 20 printers in one room', accountId: 'acc_tt', platform: 'tt', date: '2026-10-13', time: '19:00', status: 'scheduled', topicId: 'tp13', focus: '工厂实拍', metrics: null, note: '英文字幕，结尾放询盘链接', createdAt: '2026-10-11' }
       ],
       todos: [
         { id: 'td1', title: '回复今天发布内容的评论', date: '2026-10-12', time: '10:00', status: 'todo', owner: '我', priority: 'high', done: true, createdAt: '2026-10-12' },

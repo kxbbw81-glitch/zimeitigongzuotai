@@ -1,5 +1,5 @@
 /* ============================================================
-   视图 · 账号矩阵（多平台账号统一管理）
+   视图 · 账号矩阵（国内外平台 + 自定义平台统一管理）
    ============================================================ */
 (function () {
   const MW = (window.MW = window.MW || {});
@@ -194,7 +194,13 @@
     const db = MW.getDB();
     const a = id ? db.accounts.find(function (x) { return x.id === id; }) : null;
     const body = aiImportBox(!a || !!opt.ai) +
-      MW.ui.row('平台', MW.ui.platformOptions('f-platform', a ? a.platform : 'xhs')) +
+      MW.ui.row('平台', MW.ui.platformOptions('f-platform', a ? a.platform : 'xhs'),
+        '内置国内外常用平台；选「自定义平台…」可自建名称与标识色') +
+      /* 自定义平台才出现的两个字段：名字和颜色都存在账号自己身上 */
+      '<div id="pf-custom-wrap" class="form-2col" style="display:none">' +
+        MW.ui.row('平台名称', '<input id="f-platform-name" maxlength="12" placeholder="例如：TikTok Shop / 快手" value="' + MW.esc(a && a.platform === 'custom' ? (a.platformName || '') : '') + '">') +
+        MW.ui.row('标识颜色', '<input id="f-platform-color" type="color" value="' + MW.esc(a && a.platform === 'custom' ? (a.platformColor || '#6b7280') : '#6b7280') + '">') +
+      '</div>' +
       MW.ui.row('账号 ID', '<input id="f-accountid" placeholder="各平台的后台账号 / ID" value="' + MW.esc(a ? a.accountId : '') + '">') +
       MW.ui.row('账号名称', '<input id="f-name" placeholder="例如：烟枪先森-AI搞钱" value="' + MW.esc(a ? a.name : '') + '">') +
       MW.ui.row('账号定位', '<textarea id="f-positioning" rows="2" placeholder="一句话说清楚这个号是干什么的、给谁看">' + MW.esc(a ? a.positioning : '') + '</textarea>', '定位决定内容边界，也是 AI 生成时的上下文') +
@@ -229,8 +235,14 @@
         const v = function (id) { return (root.querySelector('#' + id).value || '').trim(); };
         const name = v('f-name');
         if (!name) { MW.toast('请填写账号名称', 'error'); return false; }
+        /* 自定义平台：名字必填（不给就兜个底），颜色取自带取色器 */
+        let platform = v('f-platform'), platformName = '', platformColor = '';
+        if (platform === 'custom') {
+          platformName = v('f-platform-name') || '自定义平台';
+          platformColor = v('f-platform-color') || '#6b7280';
+        }
         const obj = {
-          platform: v('f-platform'),
+          platform: platform,
           accountId: v('f-accountid'),
           name: name,
           style: v('f-style'),
@@ -245,6 +257,9 @@
           cadence: +v('f-cadence') || 3,
           status: v('f-status')
         };
+        /* 只在自定义时带上名字 / 颜色；切回内置平台时清掉，免得留下脏字段 */
+        if (platformName) { obj.platformName = platformName; obj.platformColor = platformColor; }
+        else { delete obj.platformName; delete obj.platformColor; }
         if (a) Object.assign(a, obj);
         else db.accounts.push(Object.assign({ id: MW.uid(), createdAt: MW.dateStr() }, obj));
         MW.save(); MW.render();
@@ -253,6 +268,17 @@
     });
 
     bindAiImport(document.getElementById('modal-root'));
+
+    /* 选了「自定义平台…」才展开名称 / 颜色两个字段 */
+    const pfSel = document.getElementById('f-platform');
+    const pfWrap = document.getElementById('pf-custom-wrap');
+    if (pfSel && pfWrap) {
+      const syncPfCustom = function () {
+        pfWrap.style.display = pfSel.value === 'custom' ? '' : 'none';
+      };
+      pfSel.onchange = syncPfCustom;
+      syncPfCustom();
+    }
 
     /* 配比输入即时算合计，不用等保存才发现不是 100% */
     MW.TOPIC_TYPE_LIST.forEach(function (t) {
@@ -318,7 +344,7 @@
 
   MW.views['accounts'] = {
     id: 'accounts', name: '账号矩阵', icon: 'users',
-    sub: '多平台账号统一管理，一个品牌 = 一个内容策略',
+    sub: '国内外平台 + 自定义平台统一管理，一个账号 = 一套内容策略',
     render: function (root) {
       const db = MW.getDB();
       const t = MW.dateStr();
@@ -367,9 +393,11 @@
       /* ---------- 平台筛选 + 排序 ---------- */
       const pfCount = {};
       db.accounts.forEach(function (a) { pfCount[a.platform] = (pfCount[a.platform] || 0) + 1; });
+      /* 自定义平台各叫各的名字，合成一个「自定义」标签，点进去看全部 */
       const pfTabs = [{ v: 'all', t: '全部 ' + db.accounts.length }].concat(Object.keys(MW.PLATFORMS)
         .filter(function (k) { return pfCount[k]; })
         .map(function (k) { return { v: k, t: MW.PLATFORMS[k].name + ' ' + pfCount[k] }; }));
+      if (pfCount.custom) pfTabs.push({ v: 'custom', t: '自定义 ' + pfCount.custom });
       html += '<div class="acc-toolbar">' +
         '<div class="seg">' + pfTabs.map(function (p) {
           return '<button class="seg-btn' + (filterPlatform === p.v ? ' active' : '') + '" onclick="MW.act.setAccFilter(\'' + p.v + '\')">' + MW.esc(p.t) + '</button>';
@@ -384,7 +412,7 @@
         html += MW.ui.empty('暂无账号', '点击「添加账号」手动填写，或使用「AI 识别导入」自动解析账号资料');
       } else {
         html += '<div class="acc-list">' + list.map(function (a) {
-          const p = MW.PLATFORMS[a.platform];
+          const p = MW.pfOf(a);
           const g7 = MW.growth(a, 7);
           const vs = MW.snapValues(a, 10);
           const gp = a.goalFollowers ? Math.min(100, a.followers / a.goalFollowers * 100) : 0;

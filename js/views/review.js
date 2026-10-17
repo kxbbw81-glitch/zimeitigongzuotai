@@ -69,7 +69,7 @@
     /* 复盘笔记 */
     const notes = pubs.filter(function (c) { return c.note && c.note.trim(); });
 
-    let txt = '【自媒体周报】' + start + ' ~ ' + t + '\n\n';
+    let txt = '【社媒周报】' + start + ' ~ ' + t + '\n\n';
     txt += '一、内容产出\n本周发布 ' + pubs.length + ' 篇';
     if (pubs.length) {
       const accNames = {};
@@ -188,7 +188,7 @@
           return '<div class="goal-item">' +
             '<div class="goal-name">' + MW.esc(a.name) + '</div>' +
             '<div class="goal-line"><span>粉丝</span><b>' + MW.fmt.num(a.followers) + ' / ' + MW.fmt.num(a.goalFollowers) + '</b>' +
-            MW.ui.progress(fp, MW.PLATFORMS[a.platform].color) + '</div>' +
+            MW.ui.progress(fp, MW.pfOf(a).color) + '</div>' +
             '<div class="goal-line"><span>本月发布</span><b>' + monthPubs + ' / ' + a.goalPosts + ' 篇</b>' +
             MW.ui.progress(pp, 'var(--teal)') + '</div>' +
             '</div>';

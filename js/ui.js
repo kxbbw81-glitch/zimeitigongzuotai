@@ -1,5 +1,6 @@
 /* ============================================================
-   自媒体工作台 · 通用 UI（模态 / 提示 / 格式化 / 拖拽）
+   社媒工作台 · 通用 UI（模态 / 提示 / 格式化 / 拖拽）
+   定位：外贸社媒 + 自媒体一体化工作台
    ============================================================ */
 (function () {
   const MW = (window.MW = window.MW || {});
@@ -112,10 +113,19 @@
   /* ---------- 表单辅助 ---------- */
   MW.ui = {};
 
+  /* 下拉框。options 里带 group + items 的项渲染成 optgroup（平台下拉的分组用） */
   MW.ui.select = function (id, options, value, cls) {
     let h = '<select id="' + id + '" class="' + (cls || '') + '">';
     options.forEach(function (o) {
-      h += '<option value="' + o.v + '"' + (String(o.v) === String(value) ? ' selected' : '') + '>' + MW.esc(o.t) + '</option>';
+      if (o.group) {
+        h += '<optgroup label="' + MW.esc(o.group) + '">';
+        (o.items || []).forEach(function (it) {
+          h += '<option value="' + it.v + '"' + (String(it.v) === String(value) ? ' selected' : '') + '>' + MW.esc(it.t) + '</option>';
+        });
+        h += '</optgroup>';
+      } else {
+        h += '<option value="' + o.v + '"' + (String(o.v) === String(value) ? ' selected' : '') + '>' + MW.esc(o.t) + '</option>';
+      }
     });
     return h + '</select>';
   };
@@ -128,21 +138,39 @@
   MW.ui.accountOptions = function (id, value) {
     if (value === undefined) { value = id; id = 'f-account'; }
     return MW.ui.select(id || 'f-account', MW.getDB().accounts.map(function (a) {
-      return { v: a.id, t: a.name + '（' + MW.PLATFORMS[a.platform].name + '）' };
+      return { v: a.id, t: a.name + '（' + MW.pfOf(a).name + '）' };
     }), value);
   };
 
-  /* 支持 platformOptions(id, value)，也兼容旧的单参数写法 */
+  /* 平台下拉：国内 / 国外分组，「自定义平台…」让用户自建平台（名字和颜色存账号上）。
+     选中 custom 时，调用方负责显示名称输入框（见 accounts.js 的编辑弹窗）。 */
   MW.ui.platformOptions = function (id, value) {
     if (value === undefined) { value = id; id = 'f-platform'; }
-    return MW.ui.select(id || 'f-platform', Object.keys(MW.PLATFORMS).map(function (k) {
-      return { v: k, t: MW.PLATFORMS[k].name };
-    }), value);
+    const cn = [], gl = [];
+    Object.keys(MW.PLATFORMS).forEach(function (k) {
+      const r = MW.PLATFORMS[k].region;
+      const item = { v: k, t: MW.PLATFORMS[k].name };
+      if (r === 'cn') cn.push(item);
+      else if (r === 'global') gl.push(item);
+    });
+    return MW.ui.select(id || 'f-platform', [
+      { group: '国内平台', items: cn },
+      { group: '国外平台 · 外贸社媒', items: gl },
+      { v: 'other', t: '其他' },
+      { v: 'custom', t: '自定义平台…' }
+    ], value);
   };
 
   /* ---------- 展示辅助 ---------- */
-  MW.ui.pfChip = function (platform, small) {
-    const p = MW.PLATFORMS[platform] || MW.PLATFORMS.other;
+  /* 平台 chip。第三个参数可传账号 / 内容对象——自定义平台的名字存在对象上，
+     不传就按 key 查表（竞品、热点这类不挂账号的场景）。 */
+  MW.ui.pfChip = function (platform, small, obj) {
+    let p;
+    if (platform === 'custom') {
+      p = { name: MW.pfName('custom', obj), color: (obj && obj.platformColor) || '#6b7280' };
+    } else {
+      p = MW.PLATFORMS[platform] || MW.PLATFORMS.other;
+    }
     return '<span class="pf-chip' + (small ? ' sm' : '') + '" style="--pc:' + p.color + '">' + MW.esc(p.name) + '</span>';
   };
 

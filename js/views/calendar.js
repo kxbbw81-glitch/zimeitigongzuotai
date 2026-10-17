@@ -137,10 +137,15 @@
         const title = v('c-title');
         if (!title) { MW.toast('请填写内容标题', 'error'); return false; }
         const status = v('c-status');
+        /* 自定义平台：把账号上的平台名快照进内容，换账号 / 改名字后这里仍显示对 */
+        const pfAcc = MW.accOf(v('c-account'));
+        let platform = v('c-platform'), platformName = '';
+        if (platform === 'custom') platformName = (pfAcc && pfAcc.platformName) || '';
         const obj = {
           title: title,
           accountId: v('c-account'),
-          platform: v('c-platform'),
+          platform: platform,
+          platformName: platformName,
           date: v('c-date') || MW.dateStr(),
           time: v('c-time') || '12:00',
           topicId: v('c-topic'),
@@ -268,7 +273,7 @@
           '<div class="cal-items">' +
           dayContents.slice(0, 3).map(function (c) {
             const acc = db.accounts.find(function (a) { return a.id === c.accountId; });
-            const pc = acc ? MW.PLATFORMS[acc.platform].color : '#999';
+            const pc = acc ? MW.pfOf(acc).color : '#999';
             return '<div class="cal-chip' + (c.status === 'published' ? ' published' : '') + '" data-id="' + c.id + '" style="--pc:' + pc + '">' +
               '<span class="cal-chip-time">' + (c.time || '') + '</span>' +
               '<span class="cal-chip-title">' + MW.esc(c.title) + '</span></div>';

@@ -101,7 +101,7 @@
       '<div class="wiz-step">' +
         '<div class="wiz-num">1</div>' +
         '<div><b>选一个文件夹</b>' +
-        '<div class="wiz-text">素材文件放在你自己的电脑上，工作台不复制、不上传。建议单独建一个，比如 <code>D:\\自媒体素材库</code>。</div></div>' +
+        '<div class="wiz-text">素材文件放在你自己的电脑上，工作台不复制、不上传。建议单独建一个，比如 <code>D:\\社媒素材库</code>。</div></div>' +
       '</div>' +
       '<div class="wiz-step">' +
         '<div class="wiz-num">2</div>' +
@@ -849,7 +849,7 @@ function renderRootCard(s, hint) {
       '</div>' +
 
       '<div class="asset-root-path">' +
-        '<input id="as-root" value="' + MW.esc(p) + '" placeholder="素材文件夹的完整路径，例：D:\\自媒体素材库">' +
+        '<input id="as-root" value="' + MW.esc(p) + '" placeholder="素材文件夹的完整路径，例：D:\\社媒素材库">' +
         '<button class="btn sm" onclick="MW.act.asSaveRoot()">记住路径</button>' +
         '<button class="btn sm" onclick="MW.act.asOpenRoot()" title="在资源管理器里打开这个文件夹">' + MW.icon('folder', 13) + ' 打开文件夹</button>' +
         '<button class="btn sm ghost" onclick="MW.act.asCopyRoot()" title="复制文件夹路径">' + MW.icon('copy', 13) + '</button>' +
@@ -1014,7 +1014,7 @@ function renderRootCard(s, hint) {
       '<div class="page-sub">文件存在你自己的硬盘上，工作台不复制、不上传，只做索引和标注</div></div>' +
       '<div class="card welcome-card">' +
         '<div class="welcome-title">' + MW.icon('folder', 18) + ' 先选一个素材文件夹</div>' +
-        '<div class="welcome-sub">建议单独建一个，比如 <code>D:\\自媒体素材库</code>。连上以后会自动建好类型子文件夹，新素材按类型自动归位、日期自动标好。</div>' +
+        '<div class="welcome-sub">建议单独建一个，比如 <code>D:\\社媒素材库</code>。连上以后会自动建好类型子文件夹，新素材按类型自动归位、日期自动标好。</div>' +
         '<div class="wiz-kinds big">' + AS.KINDS.filter(function (k) { return k.key !== 'other'; }).map(function (k) {
           return '<span class="wiz-kind">' + MW.icon(k.icon, 13) + ' ' + k.label + '</span>';
         }).join('') + '</div>' +

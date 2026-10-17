@@ -95,7 +95,7 @@
     const d = aiLast;
     const acc = MW.getDB().accounts.find(function (a) { return a.id === d.accountId; });
     let html = '';
-    html += '<div class="ai-ctx">' + (acc ? MW.esc(acc.name) : '通用') + ' · ' + (MW.TOPIC_TYPES[d.type] || MW.TOPIC_TYPES.case).name + '型 · ' + MW.esc((MW.PLATFORMS[d.platform] || MW.PLATFORMS.other).name) + '</div>';
+    html += '<div class="ai-ctx">' + (acc ? MW.esc(acc.name) : '通用') + ' · ' + (MW.TOPIC_TYPES[d.type] || MW.TOPIC_TYPES.case).name + '型 · ' + MW.esc(MW.pfName(d.platform, d)) + '</div>';
 
     html += '<div class="ai-block"><div class="ai-block-head"><span class="ai-block-title">' + MW.icon('flag', 13) + ' 标题候选（' + d.titles.length + '）</span>' +
       '<button class="btn sm" onclick="MW.copy(' + JSON.stringify(d.titles.join('\n')).replace(/"/g, '&quot;') + ')">' + MW.icon('copy', 12) + ' 复制全部</button></div>' +
@@ -170,6 +170,7 @@
     db.topics.push(tp);
     db.contents.push({
       id: MW.uid(), title: aiLast.titles[0], accountId: aiLast.accountId, platform: acc.platform,
+      platformName: acc.platform === 'custom' ? (acc.platformName || '') : '',
       date: t, time: time, status: 'scheduled', topicId: tp.id, focus: focus,
       metrics: null, note: '', createdAt: t
     });
@@ -196,9 +197,9 @@
       });
       return '<label class="dist-row">' +
         '<input type="checkbox" id="dist-' + a.id + '"' + (hit ? ' checked' : '') + '>' +
-        '<span class="as-dot" style="background:' + MW.PLATFORMS[a.platform].color + '"></span>' +
+        '<span class="as-dot" style="background:' + MW.pfOf(a).color + '"></span>' +
         '<span class="dist-name">' + MW.esc(a.name) + '</span>' +
-        '<span class="dist-pf">' + MW.PLATFORMS[a.platform].name + '</span>' +
+        '<span class="dist-pf">' + MW.pfOf(a).name + '</span>' +
         (hit ? '<span class="dist-fit">聚焦相近</span>' : '<span class="dist-fit off">定位不同，需改写</span>') +
         '</label>';
     }).join('');
@@ -217,6 +218,7 @@
           if (!cb || !cb.checked) return;
           db.contents.push({
             id: MW.uid(), title: aiLast.titles[0], accountId: a.id, platform: a.platform,
+            platformName: a.platform === 'custom' ? (a.platformName || '') : '',
             date: date, time: MW.ai.pfTime(a.platform), status: 'scheduled',
             topicId: '', metrics: null, focus: MW.guessFocus(a.id, aiLast.topic),
             note: '与「' + (src ? src.name : '同源') + '」同选题，需按本号定位改写', createdAt: MW.dateStr()
@@ -273,7 +275,7 @@
       } else {
         const acc = db.accounts.find(function (a) { return a.id === aiAccount; }) || db.accounts[0];
         html += MW.ui.row('选择账号', MW.ui.select('ai-acc', db.accounts.map(function (a) {
-          return { v: a.id, t: a.name + '（' + MW.PLATFORMS[a.platform].name + '）' };
+          return { v: a.id, t: a.name + '（' + MW.pfOf(a).name + '）' };
         }), aiAccount), '自动带入定位与内容聚焦');
         if (acc) {
           /* IP 规范全量带出来：这里显示的每一项都会进生成 prompt，
@@ -292,7 +294,7 @@
         html += MW.ui.row('选题 / 主题', '<input id="ai-topic" placeholder="例如：AI 模特实操案例" value="' + MW.esc(tp ? tp.title : aiPrefill) + '">');
         html += '<div class="form-2col">' +
           MW.ui.row('内容类型', MW.ui.select('ai-type', Object.keys(MW.TOPIC_TYPES).map(function (k) { return { v: k, t: MW.TOPIC_TYPES[k].name }; }), tp ? tp.type : 'case')) +
-          MW.ui.row('目标平台', MW.ui.select('ai-platform', Object.keys(MW.PLATFORMS).map(function (k) { return { v: k, t: MW.PLATFORMS[k].name }; }), acc ? acc.platform : 'xhs')) +
+          MW.ui.row('目标平台', MW.ui.platformOptions('ai-platform', acc ? acc.platform : 'xhs'), '跟随所选账号，也可手动改') +
           '</div>';
         html += MW.ui.row('关键词（可选）', '<input id="ai-kw" placeholder="例如：降本, 工作流，多个用逗号分隔">');
         html += '<button class="btn primary btn-block" onclick="MW.act.aiGen()">' + MW.icon('sparkles', 14) + ' 生成文案</button>';
@@ -307,7 +309,7 @@
         html += db.drafts.map(function (d) {
           return '<div class="draft-row"><div class="draft-main" onclick="MW.act.aiLoadDraft(\'' + d.id + '\')">' +
             '<div class="draft-title">' + MW.esc(d.topic) + '</div>' +
-            '<div class="draft-meta">' + (MW.TOPIC_TYPES[d.type] || MW.TOPIC_TYPES.case).name + ' · ' + MW.esc((MW.PLATFORMS[d.platform] || MW.PLATFORMS.other).name) + ' · ' + d.createdAt.slice(5) + '</div></div>' +
+            '<div class="draft-meta">' + (MW.TOPIC_TYPES[d.type] || MW.TOPIC_TYPES.case).name + ' · ' + MW.esc(MW.pfName(d.platform, d)) + ' · ' + d.createdAt.slice(5) + '</div></div>' +
             '<button class="icon-btn sm" onclick="MW.act.aiDelDraft(\'' + d.id + '\')">' + MW.icon('trash', 13) + '</button></div>';
         }).join('');
       }

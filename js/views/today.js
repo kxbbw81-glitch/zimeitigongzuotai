@@ -1,6 +1,6 @@
 /* ============================================================
    视图 · 今日作战台
-   博主视角：今天发什么 → 哪个号掉队了 → 下一条从哪来
+   运营者视角：今天发什么 → 哪个号掉队了 → 下一条从哪来
    ============================================================ */
 (function () {
   const MW = (window.MW = window.MW || {});
@@ -127,7 +127,7 @@
     const rows = db.accounts.map(function (a) {
       const g = MW.growth(a, 7);
       return '<div class="snap-row">' +
-        '<span class="as-dot" style="background:' + MW.PLATFORMS[a.platform].color + '"></span>' +
+        '<span class="as-dot" style="background:' + MW.pfOf(a).color + '"></span>' +
         '<span class="snap-name">' + MW.esc(a.name) + '</span>' +
         '<span class="snap-week">' + (g.delta >= 0 ? '+' : '') + g.delta + ' / 7天</span>' +
         '<input id="sn-' + a.id + '" type="number" min="0" value="' + a.followers + '"></div>';
@@ -324,7 +324,7 @@
       } else {
         html += schedToday.map(function (c) {
           const acc = db.accounts.find(function (a) { return a.id === c.accountId; });
-          const pc = acc ? MW.PLATFORMS[acc.platform].color : '#999';
+          const pc = acc ? MW.pfOf(acc).color : '#999';
           const published = c.status === 'published';
           const m = c.metrics;
           const ck = MW.checksOf(c);
@@ -332,8 +332,8 @@
             '<div class="task-time">' + (c.time || '--:--') + '</div>' +
             '<span class="task-bar" style="background:' + pc + '"></span>' +
             '<div class="task-main">' +
-              '<div class="task-title">' + MW.esc(c.title) + '</div>' +
-              '<div class="task-meta">' + MW.ui.pfChip(c.platform, true) +
+            '<div class="task-title">' + MW.esc(c.title) + '</div>' +
+            '<div class="task-meta">' + MW.ui.pfChip(c.platform, true, c) +
                 '<span class="task-acc">' + MW.esc(acc ? acc.name : '未指定账号') + '</span>' +
                 /* 发布检查项没齐就标出来，点一下直接去发布管理补齐 */
                 (!published && !ck.ready
@@ -386,7 +386,7 @@
         '<div class="card-title">' + MW.icon('users', 15) + ' 账号健康</div>' +
         '<div class="card-extra"><button class="btn sm" onclick="MW.act.snapshotModal()">' + MW.icon('trend', 12) + ' 记粉丝</button></div></div>';
       html += accList.map(function (a) {
-        const p = MW.PLATFORMS[a.platform];
+        const p = MW.pfOf(a);
         const g = MW.growth(a, 7);
         const todayN = db.contents.filter(function (c) { return c.accountId === a.id && c.date === t; }).length;
         const silent = MW.silentDays(a);

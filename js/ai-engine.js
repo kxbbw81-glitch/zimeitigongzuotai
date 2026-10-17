@@ -9,7 +9,8 @@
   MW.act = MW.act || {};
 
   /* ---------- 各平台建议发布时段 ---------- */
-  const PF_TIME = { xhs: '18:00', dy: '19:00', gzh: '20:00', bili: '20:00', sph: '21:00', x: '21:00', li: '09:00', zhihu: '20:00', wb: '12:00', yt: '21:00', other: '20:00' };
+  const PF_TIME = { xhs: '18:00', dy: '19:00', gzh: '20:00', bili: '20:00', sph: '21:00', x: '21:00', li: '09:00', zhihu: '20:00', wb: '12:00', yt: '21:00', other: '20:00',
+    tt: '19:00', ins: '12:00', fb: '15:00', pin: '21:00', th: '09:00', rd: '09:30', tg: '12:00', wa: '10:00' };
   MW.ai.pfTime = function (p) { return PF_TIME[p] || '20:00'; };
 
   const PLATFORM_TIPS = {
@@ -101,8 +102,11 @@
       (acc ? '（' + acc.positioning + '）' : '') + '。' +
       (acc && acc.audience ? '<br>目标受众：' + MW.esc(acc.audience) + '，用词和案例请对着这群人讲。' : '');
 
+    /* 自定义平台：平台名快照进草稿，账号改名 / 删号后草稿箱仍显示对 */
+    const platformName = platform === 'custom' ? (acc && acc.platformName) || '' : '';
     return {
       id: MW.uid(), accountId: acc ? acc.id : '', topic: topic, type: type, platform: platform,
+      platformName: platformName,
       titles: titles, hook: hook, outline: buildOutlines(type, topic), tags: tags, tips: tips,
       createdAt: MW.dateStr()
     };
@@ -389,7 +393,7 @@
 
     let h = '<div class="wp-form">' +
       '<div class="wp-field"><label>账号</label>' +
-      MW.ui.select('wp-acc', db.accounts.map(function (a) { return { v: a.id, t: a.name + '（' + MW.PLATFORMS[a.platform].name + '）' }; }), acc.id, 'wp-acc-sel') +
+      MW.ui.select('wp-acc', db.accounts.map(function (a) { return { v: a.id, t: a.name + '（' + MW.pfOf(a).name + '）' }; }), acc.id, 'wp-acc-sel') +
       '</div>' +
       '<div class="wp-field"><label>排期范围</label>' +
       MW.ui.select('wp-days', [{ v: '7', t: '未来 7 天' }, { v: '14', t: '未来 14 天' }], String(days), 'wp-days-sel') +
@@ -452,8 +456,10 @@
             const tp = db.topics.find(function (x) { return x.id === tid; });
             if (tp) { tp.stage = 'scheduled'; if (!tp.due) tp.due = it.date; if (!tp.focus) tp.focus = MW.guessFocus(accId, it.title); }
           }
+          const wpAcc = MW.accOf(accId) || {};
           db.contents.push({
-            id: MW.uid(), title: it.title, accountId: accId, platform: (MW.accOf(accId) || {}).platform || 'other',
+            id: MW.uid(), title: it.title, accountId: accId, platform: wpAcc.platform || 'other',
+            platformName: wpAcc.platform === 'custom' ? (wpAcc.platformName || '') : '',
             date: it.date, time: it.time, status: 'scheduled', topicId: tid,
             focus: MW.guessFocus(accId, it.title),
             metrics: null, note: 'AI 补排期', createdAt: MW.dateStr()
@@ -625,13 +631,18 @@
     goalPosts:     ['月更目标', '月更新目标', '每月发布目标', '月更数量', '月更']
   };
 
-  /* 平台别名：长词在前，避免「微信公众号」被「公众号」抢掉 */
+  /* 平台别名：长词在前，避免「微信公众号」被「公众号」抢掉。
+     只收长词 / 中文名——识别是纯 indexOf 无边界，'th' 会命中 "the"、'ig' 会命中
+     "digital"，短英文别名一律不放。 */
   const PF_ALIAS = [
     ['微信公众号', 'gzh'], ['微信视频号', 'sph'], ['rednote', 'xhs'], ['red note', 'xhs'],
-    ['小红书', 'xhs'], ['douyin', 'dy'], ['tiktok', 'dy'], ['抖音', 'dy'],
+    ['小红书', 'xhs'], ['douyin', 'dy'], ['抖音', 'dy'],
     ['bilibili', 'bili'], ['b站', 'bili'], ['视频号', 'sph'], ['公众号', 'gzh'],
+    ['youtube', 'yt'], ['油管', 'yt'], ['tiktok', 'tt'], ['tik tok', 'tt'], ['抖音国际版', 'tt'],
+    ['instagram', 'ins'], ['facebook', 'fb'], ['脸书', 'fb'],
     ['linkedin', 'li'], ['领英', 'li'], ['知乎', 'zhihu'], ['weibo', 'wb'], ['微博', 'wb'],
-    ['youtube', 'yt'], ['油管', 'yt'], ['twitter', 'x'], ['推特', 'x'], ['即刻', 'other']
+    ['twitter', 'x'], ['推特', 'x'], ['pinterest', 'pin'], ['threads', 'th'],
+    ['reddit', 'rd'], ['telegram', 'tg'], ['whatsapp', 'wa'], ['即刻', 'other']
   ];
 
   /* 把标签名洗干净：去 markdown 符号、括号补充说明、emoji、空格 */
@@ -975,7 +986,7 @@
         }
       }
       if (!pf) pf = scanPlatform(raw);
-      if (pf) mark('platform', MW.PLATFORMS[pf].name);
+      if (pf) mark('platform', MW.pfName(pf));
     }
     if (!got.followers) {
       const m1 = raw.match(/(\d[\d,.]*\s*(?:万|w|W|千|k|K)?)\s*\+?\s*(?:个)?\s*(?:粉丝|粉|fans|followers)/i);
@@ -1066,7 +1077,7 @@
       if (empty) { missed.push(k); return; }
       hits.push({
         k: k, label: LABEL_CN[k],
-        text: Array.isArray(v) ? v.join('、') : (k === 'platform' ? MW.PLATFORMS[v].name : String(v))
+        text: Array.isArray(v) ? v.join('、') : (k === 'platform' ? MW.pfName(v) : String(v))
       });
     });
     return { fields: fields, hits: hits, missed: missed };
@@ -1269,10 +1280,10 @@
      这里就是「账号信息驱动内容」的落点——账号卡上填的每一项
      都会原样进 prompt，所以那边改一个字，所有生成都跟着变。 */
   MW.ai.accountBrief = function (acc) {
-    if (!acc) return '你是资深自媒体策划。\n';
+    if (!acc) return '你是资深社媒运营策划，兼顾外贸社媒与国内自媒体。\n';
     const mix = MW.accMix(acc);
     const mixTxt = MW.TOPIC_TYPE_LIST.map(function (t) { return t.name + ' ' + mix[t.key] + '%'; }).join(' · ');
-    return '你是自媒体账号「' + (acc.name || '') + '」（平台：' + (MW.PLATFORMS[acc.platform] ? MW.PLATFORMS[acc.platform].name : acc.platform) + '）的运营策划。\n'
+    return '你是社媒账号「' + (acc.name || '') + '」（平台：' + MW.pfOf(acc).name + '）的运营策划。\n'
       + '【账号定位】' + (acc.positioning || '无') + '\n'
       + '【目标受众】' + (acc.audience || '无') + '\n'
       + '【内容风格】' + (acc.style || '无') + '\n'
@@ -1403,7 +1414,7 @@
     }).join('\n');
     return {
       count: pubs.length,
-      prompt: '以下是自媒体账号近期的内容数据：\n' + stats
+      prompt: '以下是社媒账号近期的内容数据：\n' + stats
         + '\n\n请做复盘分析：1) 哪类选题/结构表现最好，为什么；2) 哪些内容表现差，可能的原因；3) 给出 3 条下周具体可执行的建议。400 字以内，直接给结论。'
     };
   };

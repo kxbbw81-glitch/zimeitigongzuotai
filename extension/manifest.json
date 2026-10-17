@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "自媒体工作台",
+  "name": "社媒工作台",
   "version": "1.0.0",
-  "description": "自媒体博主的一站式内容工作台：今日待发、逾期提醒、待办速览，侧边栏常驻",
+  "description": "外贸社媒 + 自媒体一体化工作台：今日待发、逾期提醒、待办速览，侧边栏常驻",
   "permissions": ["storage", "alarms", "notifications", "sidePanel"],
   "background": {
     "service_worker": "background.js",
@@ -10,7 +10,7 @@
   },
   "action": {
     "default_popup": "popup.html",
-    "default_title": "自媒体工作台 · 今日速览",
+    "default_title": "社媒工作台 · 今日速览",
     "default_icon": {
       "16": "icons/icon16.png",
       "48": "icons/icon48.png",

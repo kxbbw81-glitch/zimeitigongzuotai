@@ -24,10 +24,17 @@
     return cur === 'all' || !c.accountId || c.accountId === cur;
   };
 
-  /* 平台色 + 平台名，走统一口径，别各页自己拼 */
+  /* 平台色 + 平台名，走统一口径，别各页自己拼。
+     自定义平台（custom）的名字优先取内容上快照的 platformName，
+     没有就退回账号上存的——换过账号也能显示对。 */
   function pfOf(c) {
     const a = MW.accOf(c.accountId);
     const key = c.platform || (a && a.platform) || 'other';
+    if (key === 'custom') {
+      const nm = c.platformName || (a && a.platformName) || '自定义平台';
+      const cl = (a && a.platformColor) || '#6b7280';
+      return { key: key, name: nm, color: cl };
+    }
     const p = MW.PLATFORMS[key] || MW.PLATFORMS.other;
     return { key: key, name: p.name, color: p.color };
   }
@@ -426,7 +433,7 @@
       '<div class="card-sub">按账号的更新频率看，谁掉队了</div></div>' +
       '<div class="cad-list">' + accs.map(function (a) {
         const cd = MW.cadenceOf(a);
-        const pf = MW.PLATFORMS[a.platform] || MW.PLATFORMS.other;
+        const pf = MW.pfOf(a);
         const short = cd.done < cd.goal;
         return '<div class="cad-row">' +
           '<span class="pf-chip sm" style="--pc:' + pf.color + '">' + pf.name + '</span>' +

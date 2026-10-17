@@ -63,7 +63,7 @@
     const db = MW.getDB();
     const tp = id ? db.topics.find(function (x) { return x.id === id; }) : null;
     const accOpts = db.accounts.length
-      ? db.accounts.map(function (a) { return { v: a.id, t: a.name + '（' + MW.PLATFORMS[a.platform].name + '）' }; })
+      ? db.accounts.map(function (a) { return { v: a.id, t: a.name + '（' + MW.pfOf(a).name + '）' }; })
       : [{ v: '', t: '（请先添加账号）' }];
     const body =
       MW.ui.row('选题标题', '<input id="t-title" placeholder="一句话说清楚这篇内容讲什么" value="' + MW.esc(tp ? tp.title : '') + '">') +
@@ -173,7 +173,7 @@
               '<div class="k-card-top"><span class="type-chip" style="--tc:' + ty.color + '">' + ty.name + '</span>' + MW.ui.prioChip(t.priority) + '</div>' +
               '<div class="k-title">' + MW.esc(t.title) + '</div>' +
               '<div class="k-meta">' +
-              (acc ? '<span class="k-acc" style="--pc:' + MW.PLATFORMS[acc.platform].color + '">' + MW.esc(acc.name) + '</span>' : '') +
+              (acc ? '<span class="k-acc" style="--pc:' + MW.pfOf(acc).color + '">' + MW.esc(acc.name) + '</span>' : '') +
               (t.due ? '<span class="k-due' + (overdue ? ' over' : '') + '">' + MW.icon('clock', 11) + ' ' + t.due.slice(5) + '</span>' : '') +
               MW.ui.ownerChip(t.owner) +
               '</div></div>';
