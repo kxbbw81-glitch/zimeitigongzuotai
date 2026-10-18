@@ -90,15 +90,29 @@
 
 安装与详细说明见 [`extension/README.md`](extension/README.md)，或访问线上安装页 https://media-workbench-64130.app.workbuddy.host/plugin-install.html 一键下载。
 
-## 三种使用方式
+## 桌面软件（Windows / macOS）
+
+`desktop/` 是一个 Electron 桌面壳，把工作台打包成原生软件，**内置 GitHub 热更新**：
+
+- **更新检测**：启动 3 秒后、每 4 小时、或菜单「帮助 → 检查更新」，请求 GitHub 仓库最新提交（带 ETag 条件请求，没更新不耗配额），和本地构建版本比对
+- **有更新就提示**：顶部弹出「发现新版本 · 提交说明 · 时间」，点「立即更新」后按 commit 下载源码包、校验、切换、重载——**不重装、不覆盖数据**
+- **数据安全**：你的业务数据在系统用户目录，与程序文件分离，卸载不删数据；旧版本保留 1 个可回退
+- 断网、限流、下载失败都只在应用内提示，当前版本照常使用
+
+安装包由 GitHub Actions 自动构建（每次推送 main）：Windows 产物在 `nightly` 预发布里，macOS 因本机无法交叉编译，同样由 CI 的 macos  Runner 出 `.dmg`。
+
+> macOS 未签名：首次打开如被 Gatekeeper 拦住，右键 → 打开即可。
+
+## 四种使用方式
 
 | 方式 | 适合场景 | 做法 |
 |---|---|---|
 | **本地 ZIP** | 自己用，彻底离线 | 下载 ZIP 解压，双击 `index.html` |
 | **在线网址** | 分享给合伙人 / 多场景访问 | 打开 https://media-workbench-64130.app.workbuddy.host/ （https 下素材库文件夹读写完整可用） |
 | **浏览器插件** | 想常驻 + 要提醒 | 按上一节加载 `extension/` 目录 |
+| **桌面软件** | 要一个真正的程序 + 自动更新 | 下载 nightly 里的安装包装机；之后 GitHub 一有更新，软件内一键热更新 |
 
-三种方式数据都在各自浏览器本地，互不干扰；换设备用「导出备份 / 导入备份」同步。
+四种方式数据都在各自本地，互不干扰；换设备用「导出备份 / 导入备份」同步。
 
 ## 数据与隐私
 
@@ -132,6 +146,13 @@ media-workbench/
 │   ├── mw-rules.js         # 提醒规则引擎（纯函数，口径与站内一致）
 │   ├── popup.* / sidepanel.* / content.js
 │   └── icons/
+├── desktop/                # 桌面软件（Electron，Win/macOS + 热更新）
+│   ├── src/main.js         # 主进程：窗口 / 种子 / 更新检查 / IPC
+│   ├── src/updater.js      # GitHub 热更新引擎（ETag + codeload + 版本目录隔离）
+│   ├── src/preload.js      # 安全桥：只暴露更新能力
+│   ├── scripts/sync-web.mjs# 把 Web 文件同步成安装包内置种子
+│   └── assets/             # 应用图标（ico/png）
+├── .github/workflows/desktop.yml  # 推送 main 自动构建 Win/mac 安装包
 ├── plugin-install.html     # 线上插件安装页（一键下载）
 └── README.md
 ```
@@ -148,6 +169,18 @@ for f in js/*.js js/views/*.js; do node --check "$f"; done
 
 想接真实大模型？只改 `js/ai-engine.js` 里的 `MW.ai.chat`（已是标准 OpenAI 兼容格式）。想加模块？在 `js/views/` 加一个文件，在 `js/app.js` 的 `NAV` 里登记即可。
 
+### 自己打包桌面软件
+
+```bash
+cd desktop
+npm install
+npm run dist:win    # 产出 dist/ 下的 NSIS 安装包 + 便携版 exe
+npm run dist:mac    # 需要在 mac 上执行，产出 .dmg（x64 + arm64）
+npm run test:updater   # 自检：模拟旧版本 → 检查 → 下载 → 切换，全链路跑一遍
+```
+
+改检测的仓库地址：设环境变量 `MW_REPO_OWNER` / `MW_REPO_REPO` / `MW_REPO_BRANCH`（fork 后指向自己的仓库）。
+
 ## 常见问题
 
 **Q：数据存在哪，换电脑怎么办？**
@@ -161,6 +194,15 @@ A：不必须。不配则所有 AI 功能走本地降级（本地公式选题、
 
 **Q：插件和网页版是什么关系？**
 A：插件是外壳，内核还是这个网页。侧边栏里嵌的就是线上版页面，数据 origin 一致、完全互通；插件额外提供常驻入口和后台系统通知。
+
+**Q：桌面软件怎么知道 GitHub 有更新？**
+A：启动、每 4 小时、或手动「帮助 → 检查更新」时，向 GitHub 请求仓库 main 的最新提交（未变化时用 ETag 拿 304，不消耗接口配额）。不一致就弹横幅，点「立即更新」按 commit 下载源码包、校验后切换重载——不重装，数据和设置原样保留。
+
+**Q：桌面版数据和网页版互通吗？**
+A：不互通，各自独立存储。桌面版首次启动会把安装包内置的版本铺到本机用户目录，之后只热更新这套文件；要搬数据用「导出备份 / 导入备份」。
+
+**Q：更新会把我正在写的内容冲掉吗？**
+A：不会。更新只替换程序文件（HTML/JS/CSS），业务数据在另外的存储位置；而且只有你点了「立即更新」才会发生。
 
 ---
 

@@ -1,0 +1,52 @@
+name: 桌面软件构建
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: build-${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            script: dist:win
+          - os: macos-latest
+            script: dist:mac
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: 安装依赖
+        working-directory: desktop
+        run: npm ci
+
+      - name: 构建 ${{ matrix.script }}
+        working-directory: desktop
+        env:
+          # 未签名构建：不要在 CI 上找签名证书
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+          ELECTRON_MIRROR: https://npmmirror.com/mirrors/electron/
+        run: npm run ${{ matrix.script }}
+
+      - name: 汇总产物
+        working-directory: desktop
+        run: ls -la dist/
+
+      - name: 上传到 nightly 预发布
+        working-directory: desktop
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release view nightly >/dev/null 2>&1 || gh release create nightly \
+            --prerelease \
+            --title "开发版（自动构建）" \
+            --notes "每次推送 main 自动构建。安装后应用内会提示更新，点「立即更新」即可热更新到最新提交，不需要重装。"
+          gh release upload nightly --clobber dist/*

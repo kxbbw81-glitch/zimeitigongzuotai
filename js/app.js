@@ -276,11 +276,77 @@
     });
   }
 
+  /* ---------- 桌面版更新横幅（仅 Electron 环境挂载，纯 Web 无副作用） ---------- */
+  function bindDesktopUpdater() {
+    if (!window.mwDesktop) return;
+    var banner = null;
+
+    function fmtTime(iso) {
+      if (!iso) return '';
+      return String(iso).slice(0, 10) + ' ' + String(iso).slice(11, 16);
+    }
+    function ensureBanner() {
+      if (banner) return banner;
+      banner = document.createElement('div');
+      banner.className = 'mw-update-banner';
+      banner.style.display = 'none';
+      document.body.appendChild(banner);
+      return banner;
+    }
+    function hideBanner() { if (banner) banner.style.display = 'none'; }
+    function setText(t) {
+      if (!banner) return;
+      var el = banner.querySelector('.mw-ub-text');
+      if (el) el.textContent = t;
+    }
+
+    function showAvailable(info) {
+      var b = ensureBanner();
+      b.innerHTML = '<div class="mw-ub-inner">' +
+        '<span class="mw-ub-dot"></span>' +
+        '<span class="mw-ub-text">发现新版本' + (info.message ? ' · ' + MW.esc(info.message) : '') +
+        (info.date ? '（' + fmtTime(info.date) + '）' : '') + '</span>' +
+        '<button class="mw-ub-btn" id="mw-ub-install">立即更新</button>' +
+        '<button class="mw-ub-later" id="mw-ub-later">稍后</button>' +
+        '</div>';
+      b.style.display = 'block';
+      document.getElementById('mw-ub-install').onclick = function () {
+        var btn = document.getElementById('mw-ub-install');
+        var later = document.getElementById('mw-ub-later');
+        if (btn) btn.style.display = 'none';
+        if (later) later.style.display = 'none';
+        window.mwDesktop.installUpdate();
+      };
+      document.getElementById('mw-ub-later').onclick = hideBanner;
+    }
+
+    window.mwDesktop.onUpdateEvent(function (ev) {
+      if (!ev || !ev.type) return;
+      if (ev.type === 'available') showAvailable(ev);
+      else if (ev.type === 'progress') {
+        setText(ev.phase === 'downloading' ? '正在下载更新，请保持网络畅通…' : '正在安装更新…');
+      } else if (ev.type === 'applied') {
+        MW.toast('已更新到最新版本，正在重新加载…');
+      } else if (ev.type === 'up-to-date') {
+        MW.toast('已是最新版本');
+      } else if (ev.type === 'error') {
+        MW.toast('更新失败：' + (ev.message || '未知错误'), 'error');
+        hideBanner();
+      }
+    });
+
+    /* 启动时若已有待更新（上次查到但没装），直接把横幅摆出来 */
+    window.mwDesktop.getState().then(function (s) {
+      if (s && s.available && s.available.sha !== s.currentSha) showAvailable(s.available);
+    }).catch(function () { /* 状态读取失败就不显示，等下次事件 */ });
+  }
+
   /* ---------- 启动 ---------- */
   function init() {
     buildSidebar();
     bindQuickAdd();
     bindDrawer();
+    bindDesktopUpdater();
     document.getElementById('help-btn').innerHTML = MW.icon('help', 17);
     document.getElementById('help-btn').onclick = showHelp;
     document.getElementById('tb-date').textContent = MW.dateStr() + ' ' + MW.weekdayCN(MW.dateStr());

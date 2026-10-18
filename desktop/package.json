@@ -1,0 +1,73 @@
+{
+  "name": "shemei-workbench-desktop",
+  "productName": "社媒工作台",
+  "version": "1.0.0",
+  "private": true,
+  "description": "外贸社媒 + 自媒体一体化工作台 · 桌面版（Windows / macOS，支持 GitHub 热更新）",
+  "license": "MIT",
+  "main": "src/main.js",
+  "scripts": {
+    "sync-web": "node scripts/sync-web.mjs",
+    "start": "npm run sync-web && electron .",
+    "dist:win": "npm run sync-web && electron-builder --win nsis portable --x64",
+    "dist:mac": "npm run sync-web && electron-builder --mac dmg --x64 --arm64",
+    "dist:linux": "npm run sync-web && electron-builder --linux AppImage --x64",
+    "test:updater": "npm run sync-web && electron . --test-updater",
+    "test:demo-update": "npm run sync-web && electron . --demo-update"
+  },
+  "devDependencies": {
+    "electron": "33.4.4",
+    "electron-builder": "26.15.3",
+    "tar": "^7.4.3"
+  },
+  "build": {
+    "appId": "com.mediaworkbench.desktop",
+    "productName": "社媒工作台",
+    "copyright": "Copyright © 2026 社媒工作台",
+    "directories": {
+      "output": "dist",
+      "buildResources": "assets"
+    },
+    "files": [
+      "src/**/*",
+      "package.json"
+    ],
+    "electronDist": "node_modules/electron/dist",
+    "extraResources": [
+      { "from": "app-seed", "to": "app-seed" }
+    ],
+    "win": {
+      "icon": "assets/icon.ico",
+      "forceCodeSigning": false,
+      "signExecutable": false,
+      "target": [
+        "nsis",
+        "portable"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "deleteAppDataOnUninstall": false,
+      "shortcutName": "社媒工作台",
+      "language": "2052"
+    },
+    "portable": {
+      "artifactName": "社媒工作台-${version}-便携版.${ext}"
+    },
+    "mac": {
+      "icon": "assets/icon.png",
+      "category": "public.app-category.productivity",
+      "target": [
+        { "target": "dmg", "arch": ["x64", "arm64"] }
+      ]
+    },
+    "linux": {
+      "icon": "assets/icon.png",
+      "target": [
+        "AppImage"
+      ]
+    }
+  }
+}
