@@ -38,10 +38,12 @@ jobs:
 
       - name: 汇总产物
         working-directory: desktop
+        shell: bash
         run: ls -la dist/
 
       - name: 上传到 nightly 预发布
         working-directory: desktop
+        shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -49,4 +51,6 @@ jobs:
             --prerelease \
             --title "开发版（自动构建）" \
             --notes "每次推送 main 自动构建。安装后应用内会提示更新，点「立即更新」即可热更新到最新提交，不需要重装。"
-          gh release upload nightly --clobber dist/*
+          for f in dist/*; do
+            if [ -f "$f" ]; then gh release upload nightly --clobber "$f"; fi
+          done
