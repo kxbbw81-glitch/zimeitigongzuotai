@@ -51,17 +51,21 @@ jobs:
             desktop/dist/*.blockmap
           if-no-files-found: error
 
-      - name: 上传到 nightly 预发布
+      - name: 发布到 nightly 预发布（尽力而为，失败不阻断）
         working-directory: desktop
         shell: bash
         continue-on-error: true
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release view nightly >/dev/null 2>&1 || gh release create nightly \
-            --prerelease \
-            --title "开发版（自动构建）" \
-            --notes "每次推送 main 自动构建。安装后应用内会提示更新，点「立即更新」即可热更新到最新提交，不需要重装。"
+          RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          NOTES="每次推送 main 自动构建。安装后应用内会提示更新，点「立即更新」即可热更新到最新提交，不需要重装。\n\n**下载哪个？**\n- Windows：安装版 / 便携版（免安装，U 盘可直接运行）\n- macOS：按芯片选择——arm64 适用于 Apple Silicon（M 系列），x64 适用于 Intel\n\n安装包若未出现在本页，请到流水线产物下载：${RUN_URL}"
+          # 清理上一版（发布与标签一并删掉，便于同名标签重建）
+          gh release delete nightly --cleanup-tag --yes >/dev/null 2>&1 || true
+          # 草稿状态才能上传资产（发布后会被锁定为不可变）；传完再发布
+          gh release create nightly --draft --prerelease \
+            --title "开发版（自动构建）" --notes "$NOTES" || exit 0
           for f in dist/*; do
-            if [ -f "$f" ]; then gh release upload nightly --clobber "$f"; fi
+            if [ -f "$f" ]; then gh release upload nightly "$f" || exit 0; fi
           done
+          gh release edit nightly --draft=false || true
