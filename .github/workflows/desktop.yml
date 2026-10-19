@@ -41,9 +41,20 @@ jobs:
         shell: bash
         run: ls -la dist/
 
+      - name: 保存安装包为流水线产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: 桌面安装包-${{ matrix.os }}
+          path: |
+            desktop/dist/*.exe
+            desktop/dist/*.dmg
+            desktop/dist/*.blockmap
+          if-no-files-found: error
+
       - name: 上传到 nightly 预发布
         working-directory: desktop
         shell: bash
+        continue-on-error: true
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
