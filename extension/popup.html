@@ -42,6 +42,16 @@
 
   .empty { padding: 26px 14px 30px; text-align: center; color: #9aa0b4; font-size: 12.5px; }
   .empty .big { font-size: 26px; margin-bottom: 6px; }
+  .cap-card { display: none; margin: 12px 14px 0; background: #fff; border: 1px solid #e7e9f2; border-radius: 10px; padding: 11px 12px; }
+  .cap-title { font-size: 12.5px; font-weight: 700; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+  .cap-title::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: #07c160; }
+  .cap-row { display: flex; gap: 8px; font-size: 11.5px; line-height: 1.5; margin-bottom: 5px; }
+  .cap-row > span { color: #9aa0b4; flex-shrink: 0; width: 52px; }
+  .cap-row > b { font-weight: 600; color: #1a1d29; word-break: break-all; }
+  .cap-row select { flex: 1; min-width: 0; font-size: 11.5px; padding: 3px 6px; border: 1px solid #e7e9f2; border-radius: 7px; font-family: inherit; background: #fff; }
+  .cap-ops { display: flex; gap: 7px; margin-top: 9px; }
+  .cap-ops .open-btn { flex: 1; }
+  .cap-hint { font-size: 10.5px; color: #9aa0b4; margin-top: 7px; line-height: 1.5; }
   .foot { display: flex; align-items: center; gap: 8px; padding: 11px 14px 13px; border-top: 1px solid #e7e9f2; margin-top: 10px; background: #fff; }
   .foot .sync { flex: 1; font-size: 11px; color: #9aa0b4; min-width: 0; }
   .open-btn { border: 0; border-radius: 8px; padding: 7px 12px; font-size: 12px; font-weight: 600; background: #4f46e5; color: #fff; cursor: pointer; font-family: inherit; }
@@ -53,6 +63,18 @@
     <div class="logo">工</div>
     <div class="t"><b>今日速览</b><span id="today"></span></div>
     <button class="side-btn" id="btn-side">打开侧边栏</button>
+  </div>
+  <div id="capture" class="cap-card">
+    <div class="cap-title">捕获这篇公众号文章</div>
+    <div class="cap-row"><span>标题</span><b id="cap-title"></b></div>
+    <div class="cap-row"><span>来源账号</span><b id="cap-acc"></b></div>
+    <div class="cap-row"><span>发布日期</span><b id="cap-date"></b></div>
+    <div class="cap-row"><span>归到</span><select id="cap-src"></select></div>
+    <div class="cap-ops">
+      <button class="open-btn" id="cap-save">捕获到工作台</button>
+      <button class="side-btn" id="cap-copy">复制信息</button>
+    </div>
+    <div class="cap-hint" id="cap-hint">捕获后打开工作台，右下角会提示「全部收录」</div>
   </div>
   <div id="body"><div class="empty">加载中…</div></div>
   <div class="foot">

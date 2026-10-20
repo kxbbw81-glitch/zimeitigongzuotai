@@ -1493,3 +1493,59 @@ body.dragging { cursor: copy; }
 @media (max-width: 640px) {
   .mw-ub-text { white-space: normal; }
 }
+
+/* ============================================================
+   视图 · 转载（来源账号关注 + 转载动态）
+   ============================================================ */
+.rp-pending-n { color: var(--amber); }
+
+/* 首次引导 */
+.rp-guide { margin-bottom: 14px; }
+.rp-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 12px; }
+.rp-step { background: var(--bg2); border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 4px; }
+.rp-step b { font-size: 13px; color: var(--primary); }
+.rp-step span { font-size: 12px; color: var(--text2); line-height: 1.5; }
+.rp-warn { margin-top: 12px; font-size: 12px; color: #b45309; background: var(--amber-soft); border-radius: 8px; padding: 8px 12px; display: flex; align-items: center; gap: 7px; line-height: 1.5; }
+.rp-warn.bottom { margin-bottom: 14px; }
+@media (max-width: 720px) { .rp-steps { grid-template-columns: 1fr; } }
+
+/* 来源账号卡 */
+.src-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px; }
+.src-card { border: 1px solid var(--line); border-radius: 12px; padding: 13px 14px; display: flex; flex-direction: column; gap: 7px; background: var(--panel); }
+.src-card:hover { border-color: #cfd4e6; }
+.src-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.src-name { font-size: 14px; font-weight: 700; }
+.src-pending { font-size: 11px; font-weight: 600; color: #b45309; background: var(--amber-soft); border-radius: 20px; padding: 2px 9px; }
+.src-id { font-size: 12px; color: var(--text3); }
+.src-tags { display: flex; flex-wrap: wrap; gap: 5px; }
+.src-tag { font-size: 11px; color: var(--primary); background: var(--primary-soft); border-radius: 6px; padding: 2px 8px; }
+.src-note { font-size: 12px; color: var(--text2); line-height: 1.55; background: var(--bg2); border-radius: 8px; padding: 7px 10px; }
+.src-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 2px; flex-wrap: wrap; }
+.src-checked { font-size: 11.5px; color: var(--text3); }
+.src-ops { display: flex; gap: 5px; flex-wrap: wrap; }
+
+/* 转载动态 */
+.rp-filters { flex-wrap: wrap; }
+.rp-chip { border: 1px solid var(--line); background: var(--panel); color: var(--text2); font-size: 12px; border-radius: 20px; padding: 4px 12px; cursor: pointer; font-family: inherit; }
+.rp-chip:hover { border-color: #cfd4e6; }
+.rp-chip.on { background: var(--primary); border-color: var(--primary); color: #fff; }
+.rp-chip.hot:not(.on) { color: #b45309; border-color: #f3d9a8; background: var(--amber-soft); }
+.rp-chip.info { cursor: default; }
+.rp-src { font-size: 13px; font-weight: 600; }
+.rp-src-pf { margin-top: 3px; }
+.rp-title { font-size: 13px; font-weight: 600; line-height: 1.45; max-width: 460px; }
+.rp-link { font-size: 11.5px; color: var(--primary); display: inline-flex; align-items: center; gap: 4px; margin-top: 3px; }
+.rp-link:hover { text-decoration: underline; }
+.rp-note { font-size: 11.5px; color: var(--text3); margin-top: 3px; max-width: 460px; }
+.rp-status { display: inline-block; font-size: 11.5px; font-weight: 600; border-radius: 20px; padding: 3px 10px; white-space: nowrap; }
+
+/* 插件捕获箱横幅（右下角，不挡主操作） */
+.mw-cap-banner { position: fixed; right: 18px; bottom: 18px; width: 330px; max-width: calc(100vw - 36px); background: var(--panel); border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 8px 30px rgba(16, 24, 40, 0.16); padding: 14px 15px; z-index: 900; font-family: inherit; }
+.mw-cap-head { display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 700; }
+.mw-cap-head .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--amber); flex-shrink: 0; }
+.mw-cap-list { margin: 10px 0 12px; display: flex; flex-direction: column; gap: 7px; max-height: 200px; overflow-y: auto; }
+.mw-cap-item { font-size: 12px; line-height: 1.5; color: var(--text2); }
+.mw-cap-item b { color: var(--text); font-weight: 600; }
+.mw-cap-ops { display: flex; gap: 8px; }
+.mw-cap-ops .btn { flex: 1; justify-content: center; }
+@media (max-width: 640px) { .mw-cap-banner { right: 12px; left: 12px; bottom: 12px; width: auto; } }

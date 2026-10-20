@@ -170,7 +170,9 @@
             const ty = MW.TOPIC_TYPES[t.type] || MW.TOPIC_TYPES.case;
             const overdue = t.due && t.due < today && st.id !== 'published' && st.id !== 'retro';
             return '<div class="k-card" data-id="' + t.id + '">' +
-              '<div class="k-card-top"><span class="type-chip" style="--tc:' + ty.color + '">' + ty.name + '</span>' + MW.ui.prioChip(t.priority) + '</div>' +
+              '<div class="k-card-top"><span class="type-chip" style="--tc:' + ty.color + '">' + ty.name + '</span>' +
+              (t.repostFrom ? '<span class="type-chip" style="--tc:#0ea5e9" title="转载自 ' + MW.esc(t.repostFrom.sourceName) + '">转载</span>' : '') +
+              MW.ui.prioChip(t.priority) + '</div>' +
               '<div class="k-title">' + MW.esc(t.title) + '</div>' +
               '<div class="k-meta">' +
               (acc ? '<span class="k-acc" style="--pc:' + MW.pfOf(acc).color + '">' + MW.esc(acc.name) + '</span>' : '') +

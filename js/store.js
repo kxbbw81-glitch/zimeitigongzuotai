@@ -381,6 +381,11 @@
          没有 fileRel，属于笔记而不是文件，不搬进文件索引 */
       d.version = 6;
     }
+    /* v7：转载来源库——关注外部账号，记录对方更新，一键转成带署名信息的选题 */
+    if (!d.version || d.version < 7) {
+      d.sources = d.sources || [];
+      d.version = 7;
+    }
     return d;
   }
   /* 给外部（导入 / 手工修复）用 */
@@ -394,7 +399,7 @@
         /* 迁移后校验：老库可能缺表，缺了就补，避免视图取属性时炸。
            这里只补空数组，不动已有数据。 */
         ['competitors', 'inspirations', 'hotspots', 'topics', 'contents', 'todos',
-          'rituals', 'finance', 'assets', 'drafts'].forEach(function (k) {
+          'rituals', 'finance', 'assets', 'drafts', 'sources'].forEach(function (k) {
           if (!Array.isArray(db[k])) db[k] = [];
         });
         if (!db.ritualLog || typeof db.ritualLog !== 'object') db.ritualLog = {};
@@ -755,6 +760,16 @@
   };
 
   /* 预警清单：博主打开工作台应该先看到的东西 */
+  /* 转载来源库里还没处理的更新条数（侧栏角标 + 今日预警共用） */
+  MW.pendingReposts = function () {
+    const db = MW.getDB();
+    let n = 0;
+    (db.sources || []).forEach(function (s) {
+      (s.posts || []).forEach(function (p) { if (p.status === 'new') n++; });
+    });
+    return n;
+  };
+
   MW.alerts = function () {
     const db = MW.getDB();
     const out = [];
@@ -783,6 +798,11 @@
     if (lowStock.length) {
       out.push({ level: 'warn', icon: 'bulb', acc: '',
         text: lowStock.join('、') + ' 选题库存不足（不到 3 个）', action: '补选题', goto: '#/ideas' });
+    }
+    const rp = MW.pendingReposts();
+    if (rp) {
+      out.push({ level: 'info', icon: 'paste', acc: '',
+        text: rp + ' 条来源账号更新待处理，越早转载越及时', action: '去处理', goto: '#/reposts' });
     }
     const pm = MW.pendingMetrics(MW.curAcc());
     if (pm.length) {
@@ -1048,7 +1068,7 @@
      ============================================================ */
   function seed() {
     return {
-      version: 6,
+      version: 7,
       accounts: [
         { id: 'acc_xhs1', platform: 'xhs', accountId: 'yanqiang_ai', name: '烟枪先森-AI搞钱', style: '干货实操',
           positioning: '用 AI 开发产品和业务系统的实战创业者', focus: ['AI工具实操', '独立站', '外贸CRM', '电商增长'],
@@ -1118,6 +1138,23 @@
         { id: 'cp4', platform: 'yt', name: 'CrossBorder Wang', accountId: 'cbwang', category: '外贸跨境', followers: 8600, freq: '周2更',
           strategy: '工厂实拍加避坑指南，标题带数字，简介埋独立站链接',
           snapshots: [{ date: '2026-09-14', followers: 8100 }, { date: '2026-09-28', followers: 8400 }, { date: '2026-10-12', followers: 8600 }], updatedAt: '2026-10-12' }
+      ],
+      sources: [
+        { id: 'src1', name: '数字生命卡兹克', platform: 'gzh', accountId: 'Kaslimi',
+          tags: ['AI工具', '前沿资讯'],
+          note: 'AI 圈头部号，转载需后台留言授权，通过后开双勾转载并注明来源',
+          lastCheckedAt: '2026-10-18', createdAt: '2026-09-20', updatedAt: '2026-10-18',
+          posts: [
+            { id: 'sp1', title: 'Claude 4.5 实测：写代码真的到交付水平了', link: 'https://mp.weixin.qq.com/s/demo1', publishedAt: '2026-10-17', capturedAt: '2026-10-18', status: 'new', note: '' },
+            { id: 'sp2', title: '我用 AI 三天做了个出海小工具，完整复盘', link: 'https://mp.weixin.qq.com/s/demo2', publishedAt: '2026-10-09', capturedAt: '2026-10-10', status: 'planned', note: '已转成选题，等排期' }
+          ] },
+        { id: 'src2', name: '3D 打印资源库', platform: 'gzh', accountId: '3d-res',
+          tags: ['3D打印', '行业动态'],
+          note: '行业资讯号，资讯类转载注明来源即可，模型文件注意看对方授权声明',
+          lastCheckedAt: '2026-10-16', createdAt: '2026-10-02', updatedAt: '2026-10-16',
+          posts: [
+            { id: 'sp3', title: '2026 桌面级 3D 打印机横评：耗材成本差 3 倍', link: 'https://mp.weixin.qq.com/s/demo3', publishedAt: '2026-10-15', capturedAt: '2026-10-16', status: 'new', note: '' }
+          ] }
       ],
       inspirations: [
         { id: 'is1', title: '用 AI 把 1688 详情页重做一遍，转化率提升多少？', source: '竞品评论区', accountId: 'acc_xhs1', tags: ['AI工具实操', '电商增长'], note: '有人问工具链，需求真实', createdAt: '2026-10-11' },

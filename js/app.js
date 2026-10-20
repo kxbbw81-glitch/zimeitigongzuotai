@@ -11,7 +11,7 @@
      每个模块的 id 与路由不变，老链接照常可用。 */
   const NAV = [
     { label: '今天', items: ['today'] },
-    { label: '做内容', items: ['ideas', 'board', 'ai', 'assets'] },
+    { label: '做内容', items: ['ideas', 'reposts', 'board', 'ai', 'assets'] },
     { label: '发出去', items: ['calendar', 'publish'] },
     { label: '看效果', items: ['review', 'competitors'] },
     { label: '日常', items: ['todos', 'finance', 'accounts'] }
@@ -92,7 +92,8 @@
       today: db.todos.filter(function (x) { return x.date === t && !x.done; }).length,
       todos: db.todos.filter(function (x) { return !x.done; }).length,
       board: db.topics.filter(function (x) { return x.stage === 'review' || x.stage === 'producing'; }).length,
-      ideas: db.inspirations.length
+      ideas: db.inspirations.length,
+      reposts: MW.pendingReposts()
     };
     document.querySelectorAll('.nav-badge').forEach(function (el) {
       const n = counts[el.getAttribute('data-badge')] || 0;
@@ -341,12 +342,41 @@
     }).catch(function () { /* 状态读取失败就不显示，等下次事件 */ });
   }
 
+  /* ---------- 插件捕获箱：浏览器插件在公众号文章页捕获的转载候选，
+     经 content.js 桥接进来，在右下角提示收录（纯 Web 环境下不会有任何消息） ---------- */
+  function bindCaptureInbox() {
+    window.addEventListener('message', function (ev) {
+      if (ev.source !== window) return;
+      var d = ev.data;
+      if (!d || d.source !== 'mw-extension' || d.type !== 'mw-capture') return;
+      if (!Array.isArray(d.items) || !d.items.length) return;
+      var old = document.querySelector('.mw-cap-banner');
+      if (old) old.remove();
+      var el = document.createElement('div');
+      el.className = 'mw-cap-banner';
+      el.innerHTML = '<div class="mw-cap-head"><span class="dot"></span>插件捕获 · ' + d.items.length + ' 条转载待收录</div>' +
+        '<div class="mw-cap-list">' + d.items.slice(0, 6).map(function (it) {
+          return '<div class="mw-cap-item"><b>' + MW.esc(it.title || '') + '</b><br>来源：' + MW.esc(it.sourceName || '未识别') + '</div>';
+        }).join('') + '</div>' +
+        '<div class="mw-cap-ops">' +
+        '<button class="btn sm primary" id="mw-cap-import">全部收录</button>' +
+        '<button class="btn sm" id="mw-cap-later">稍后</button>' +
+        '</div>';
+      document.body.appendChild(el);
+      document.getElementById('mw-cap-import').onclick = function () {
+        MW.act.importCaptures(d.items);
+      };
+      document.getElementById('mw-cap-later').onclick = function () { el.remove(); };
+    });
+  }
+
   /* ---------- 启动 ---------- */
   function init() {
     buildSidebar();
     bindQuickAdd();
     bindDrawer();
     bindDesktopUpdater();
+    bindCaptureInbox();
     document.getElementById('help-btn').innerHTML = MW.icon('help', 17);
     document.getElementById('help-btn').onclick = showHelp;
     document.getElementById('tb-date').textContent = MW.dateStr() + ' ' + MW.weekdayCN(MW.dateStr());
