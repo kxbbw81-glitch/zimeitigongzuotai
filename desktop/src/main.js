@@ -4,7 +4,19 @@
 const { app, BrowserWindow, ipcMain, dialog, Menu, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
-const { Updater, REPO, CHECK_INTERVAL } = require('./updater');
+
+/* 更新模块：加载失败时退到兜底实现，保证应用仍能打开（只是没有自动更新） */
+let Updater = null;
+let REPO = { owner: 'kxbbw81-glitch', repo: 'zimeitigongzuotai', branch: 'main' };
+let CHECK_INTERVAL = 4 * 60 * 60 * 1000;
+try {
+  const updaterMod = require('./updater');
+  Updater = updaterMod.Updater;
+  if (updaterMod.REPO) REPO = updaterMod.REPO;
+  if (updaterMod.CHECK_INTERVAL) CHECK_INTERVAL = updaterMod.CHECK_INTERVAL;
+} catch (e) {
+  console.error('[main] 更新模块加载失败，自动更新不可用：', e && e.message ? e.message : e);
+}
 
 const isDev = !app.isPackaged;
 let win = null;
@@ -26,6 +38,32 @@ function seedDir() {
   return candidates[0];
 }
 function entryFile() { return path.join(versionsRoot(), updater.state.currentSha, 'index.html'); }
+
+/* 更新模块缺失时的兜底更新器：把种子直接铺到 versions/seed 保证能启动，
+   检查/安装返回明确错误（提示重装），不让应用白屏 */
+function makeFallbackUpdater(userData) {
+  const dest = path.join(userData, 'versions', 'seed');
+  try {
+    if (!fs.existsSync(path.join(dest, 'index.html'))) {
+      fs.mkdirSync(dest, { recursive: true });
+      const dir = seedDir();
+      for (const item of ['index.html', 'plugin-install.html', 'css', 'js']) {
+        const s = path.join(dir, item);
+        if (fs.existsSync(s)) fs.cpSync(s, path.join(dest, item), { recursive: true });
+      }
+    }
+  } catch (e) {
+    console.error('[main] 兜底种子铺设失败：', e && e.message ? e.message : e);
+  }
+  return {
+    state: { currentSha: 'seed', etag: null, lastCheckAt: null, lastError: '更新模块缺失', available: null },
+    seed: function () { return 'seed'; },
+    check: async function () { return { type: 'error', message: '更新模块缺失，请重新安装最新版' }; },
+    apply: async function () { throw new Error('更新模块缺失，请重新安装最新版'); },
+    repoUrl: function () { return 'https://github.com/' + REPO.owner + '/' + REPO.repo; },
+    _save: function () {}, _prune: function () {}
+  };
+}
 
 /* ---------- 窗口 ---------- */
 function createWindow() {
@@ -207,7 +245,10 @@ if (!app.requestSingleInstanceLock()) {
   app.quit();
 } else {
   app.whenReady().then(function () {
-    updater = new Updater(app.getPath('userData'), function (m) { console.log('[updater] ' + m); });
+    const userData = app.getPath('userData');
+    updater = Updater
+      ? new Updater(userData, function (m) { console.log('[updater] ' + m); })
+      : makeFallbackUpdater(userData);
     updater.seed(seedDir());
     createWindow();
     buildMenu();

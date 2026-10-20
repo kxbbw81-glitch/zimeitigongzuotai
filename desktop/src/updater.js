@@ -13,7 +13,7 @@
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const tar = require('tar');
+const { execFile } = require('child_process');
 
 const REPO = {
   owner: process.env.MW_REPO_OWNER || 'kxbbw81-glitch',
@@ -37,6 +37,27 @@ function copyItems(src, dest) {
     const s = path.join(src, item);
     if (fs.existsSync(s)) fs.cpSync(s, path.join(dest, item), { recursive: true });
   }
+}
+
+/* 用系统自带 tar 解压 tar.gz（Windows 10 1803+ / macOS 均内置）。
+   桌面壳因此不打包任何第三方运行时依赖——安装后不会出现缺模块崩溃。 */
+function extractTarGz(tgz, dest) {
+  return new Promise(function (resolve, reject) {
+    execFile('tar', ['-xzf', tgz, '-C', dest, '--strip-components=1'], {
+      windowsHide: true,
+      maxBuffer: 8 * 1024 * 1024
+    }, function (err) {
+      if (err) {
+        if (err.code === 'ENOENT') {
+          reject(new Error('系统缺少 tar 命令（Windows 10 1803 以上 / macOS 均自带）。请手动下载更新包解压，或重装最新版'));
+        } else {
+          reject(new Error('解压更新包失败：' + (err.message || err)));
+        }
+        return;
+      }
+      resolve();
+    });
+  });
 }
 
 class Updater {
@@ -170,7 +191,7 @@ class Updater {
       fs.writeFileSync(tgz, buf);
       const ex = path.join(tmp, 'x');
       fs.mkdirSync(ex);
-      await tar.x({ file: tgz, cwd: ex, strip: 1 }); // strip 掉 repo-sha/ 顶层目录
+      await extractTarGz(tgz, ex); // strip 掉 repo-sha/ 顶层目录
 
       for (const f of REQUIRED) {
         if (!fs.existsSync(path.join(ex, f))) throw new Error('更新包缺少关键文件：' + f);
