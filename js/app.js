@@ -78,6 +78,7 @@
       '<button class="side-btn" onclick="MW.act.importData()">' + MW.icon('upload', 13) + ' 导入恢复</button>' +
       '<button class="side-btn" onclick="MW.act.resetDemo()">' + MW.icon('refresh', 13) + ' 恢复示例</button>' +
       '<button class="side-btn" onclick="MW.act.aiSettings()">' + MW.icon('sparkles', 13) + ' AI 接口</button>' +
+      '<button class="side-btn" onclick="MW.act.aboutApp()">' + MW.icon('help', 13) + ' 关于与联系</button>' +
       '</div>' +
       '<div class="side-foot-note">数据存在本机浏览器，多设备用「导出 / 导入」同步</div>' +
       '</div>';

@@ -386,6 +386,14 @@
       d.sources = d.sources || [];
       d.version = 7;
     }
+    /* v8：关于与联系——settings.about 存联系方式（随安装包分发/备份），
+       settings.license 存授权码（本地校验，不锁功能，只做正版标识） */
+    if (!d.version || d.version < 8) {
+      d.settings = d.settings || {};
+      d.settings.about = d.settings.about || { contactLabel: '', contactValue: '', contactNote: '' };
+      if (!d.settings.license) d.settings.license = null;
+      d.version = 8;
+    }
     return d;
   }
   /* 给外部（导入 / 手工修复）用 */
@@ -1253,7 +1261,10 @@
       settings: {
         ai: { baseUrl: '', apiKey: '', model: '' },
         /* 素材库：只存索引与标注，文件在用户硬盘上（v6） */
-        assets: { onboarded: false, list: [], meta: {}, autoFolder: true, pending: false, lastSync: 0 }
+        assets: { onboarded: false, list: [], meta: {}, autoFolder: true, pending: false, lastSync: 0 },
+        /* 关于与联系：联系方式随安装包/备份分发，license 为授权码（v8） */
+        about: { contactLabel: '', contactValue: '', contactNote: '' },
+        license: null
       }
     };
   }

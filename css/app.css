@@ -1571,3 +1571,49 @@ body.dragging { cursor: copy; }
 .ai-import-ok { font-size: 12px; color: #15803d; margin-top: 10px; }
 #ai-paste-box { margin-top: 9px; }
 #ai-paste-ta { font-size: 12px; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; }
+
+/* ============================================================
+   关于与联系（软件信息 / 联系方式 / 授权状态）
+   ============================================================ */
+.ab-intro { background: var(--bg2); border-radius: 12px; padding: 14px 15px; margin-bottom: 16px; }
+.ab-app { display: flex; align-items: center; gap: 10px; }
+.ab-logo { width: 40px; height: 40px; border-radius: 11px; background: linear-gradient(135deg, var(--primary), #8b5cf6); color: #fff; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.ab-app b { display: block; font-size: 15px; }
+.ab-app span { display: block; font-size: 11.5px; color: var(--text3); margin-top: 1px; }
+.ab-app > div:nth-child(2) { flex: 1; min-width: 0; }
+.ab-ver { font-size: 11.5px; font-weight: 600; color: var(--primary); background: var(--primary-soft); border-radius: 20px; padding: 3px 10px; flex-shrink: 0; }
+.ab-intro p { font-size: 12px; color: var(--text2); line-height: 1.7; margin: 11px 0 0; }
+
+.ab-sec-title { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; margin: 18px 0 10px; }
+.ab-sec-title svg { color: var(--text3); }
+
+.ab-contact { border: 1px solid var(--line); border-radius: 10px; padding: 11px 13px; }
+.ab-contact.empty { border-style: dashed; }
+.ab-contact-line { display: flex; align-items: baseline; gap: 10px; font-size: 13px; }
+.ab-contact-line b { flex-shrink: 0; color: var(--text3); font-size: 12px; font-weight: 600; }
+.ab-contact-line span { word-break: break-all; }
+.ab-contact-note { font-size: 11.5px; color: var(--text3); margin-top: 6px; line-height: 1.6; }
+.ab-contact-empty { font-size: 12px; color: var(--text3); line-height: 1.7; }
+
+.ab-license { display: flex; align-items: flex-start; gap: 10px; border: 1px solid var(--line); border-radius: 10px; padding: 11px 13px; }
+.ab-license.ok { border-color: #b7e4c7; background: #f0faf4; }
+.ab-license svg { flex-shrink: 0; margin-top: 2px; color: #b45309; }
+.ab-license.ok svg { color: #15803d; }
+.ab-license b { display: block; font-size: 13px; }
+.ab-license span { display: block; font-size: 11.5px; color: var(--text2); line-height: 1.6; margin-top: 3px; }
+.ab-license-form { margin-top: 10px; }
+.ab-license-form .btn { margin-top: 4px; }
+
+.ab-help { display: flex; flex-direction: column; gap: 8px; }
+.ab-help-item { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; border: 1px solid var(--line); background: var(--panel); border-radius: 10px; padding: 10px 13px; cursor: pointer; font-family: inherit; }
+.ab-help-item:hover { border-color: #cfd4e6; }
+.ab-help-item svg { color: var(--text3); flex-shrink: 0; }
+.ab-help-item div { flex: 1; min-width: 0; }
+.ab-help-item b { display: block; font-size: 12.5px; }
+.ab-help-item span { display: block; font-size: 11.5px; color: var(--text3); margin-top: 1px; }
+.ab-foot-note { font-size: 11.5px; color: var(--text3); line-height: 1.7; margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--line); }
+
+.ab-changelog { display: flex; flex-direction: column; gap: 10px; }
+.ab-cl-item { display: flex; gap: 10px; align-items: baseline; }
+.ab-cl-item b { flex-shrink: 0; font-size: 12px; color: var(--primary); background: var(--primary-soft); border-radius: 6px; padding: 2px 8px; }
+.ab-cl-item span { font-size: 12px; color: var(--text2); line-height: 1.6; }
