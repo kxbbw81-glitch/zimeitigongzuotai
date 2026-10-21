@@ -8,6 +8,7 @@ contextBridge.exposeInMainWorld('mwDesktop', {
   checkUpdate: function () { return ipcRenderer.invoke('mw:check-update'); },
   installUpdate: function () { return ipcRenderer.invoke('mw:install-update'); },
   openRepo: function () { return ipcRenderer.invoke('mw:open-repo'); },
+  scanAiConfig: function () { return ipcRenderer.invoke('mw:scan-ai-config'); },
   onUpdateEvent: function (cb) {
     const handler = function (_e, data) { cb(data); };
     ipcRenderer.on('mw:update-event', handler);

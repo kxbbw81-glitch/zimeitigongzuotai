@@ -1549,3 +1549,25 @@ body.dragging { cursor: copy; }
 .mw-cap-ops { display: flex; gap: 8px; }
 .mw-cap-ops .btn { flex: 1; justify-content: center; }
 @media (max-width: 640px) { .mw-cap-banner { right: 12px; left: 12px; bottom: 12px; width: auto; } }
+
+/* ============================================================
+   AI 接口设置 · 一键导入（本机 Codex 配置 / 环境变量 / 粘贴）
+   ============================================================ */
+.ai-import { border: 1px dashed var(--line); border-radius: 10px; padding: 10px 12px; margin-bottom: 14px; background: var(--bg2); }
+.ai-import-head { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.ai-import-head b { font-size: 13px; }
+.ai-import-head span { font-size: 11.5px; color: var(--text3); }
+.ai-import-ops { display: flex; gap: 8px; margin-top: 9px; flex-wrap: wrap; }
+.ai-import-out:empty { display: none; }
+.ai-import-found { font-size: 12px; color: var(--text2); margin-top: 10px; }
+.ai-import-item { display: flex; align-items: center; justify-content: space-between; gap: 10px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; margin-top: 7px; }
+.ai-import-item-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; font-size: 12px; }
+.ai-import-item-main b { font-size: 12.5px; }
+.ai-import-key { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; color: var(--text2); }
+.ai-import-url { color: var(--text3); font-size: 11.5px; word-break: break-all; }
+.ai-import-url.warn { color: #b45309; }
+.ai-import-tip { font-size: 12px; color: var(--text2); line-height: 1.75; margin-top: 10px; }
+.ai-import-tip b { color: var(--text); }
+.ai-import-ok { font-size: 12px; color: #15803d; margin-top: 10px; }
+#ai-paste-box { margin-top: 9px; }
+#ai-paste-ta { font-size: 12px; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; }

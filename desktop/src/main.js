@@ -4,6 +4,15 @@
 const { app, BrowserWindow, ipcMain, dialog, Menu, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const os = require('os');
+
+/* 本机 AI 配置扫描（AI 接口一键导入用）：加载失败不影响主流程 */
+let scanAiConfig = null;
+try {
+  scanAiConfig = require('./ai-config-scan').scanAiConfig;
+} catch (e) {
+  console.error('[main] AI 配置扫描模块加载失败：', e && e.message ? e.message : e);
+}
 
 /* 更新模块：加载失败时退到兜底实现，保证应用仍能打开（只是没有自动更新） */
 let Updater = null;
@@ -197,6 +206,15 @@ function bindIpc() {
   ipcMain.handle('mw:check-update', function () { return checkUpdates(true); });
   ipcMain.handle('mw:install-update', function () { return installUpdate(); });
   ipcMain.handle('mw:open-repo', function () { shell.openExternal(updater.repoUrl()); });
+  /* AI 接口一键导入：扫描本机 Codex 配置与环境变量（只读；密钥不进日志） */
+  ipcMain.handle('mw:scan-ai-config', function () {
+    if (!scanAiConfig) return { codexExists: false, codexMode: null, codexModel: '', items: [], error: '扫描模块不可用' };
+    try {
+      return scanAiConfig(os.homedir(), process.env);
+    } catch (e) {
+      return { codexExists: false, codexMode: null, codexModel: '', items: [], error: String(e && e.message || e) };
+    }
+  });
 }
 
 /* ---------- 自检模式（--test-updater）：不依赖人工，全链路跑一遍 ---------- */
