@@ -11,7 +11,7 @@
      每个模块的 id 与路由不变，老链接照常可用。 */
   const NAV = [
     { label: '今天', items: ['today'] },
-    { label: '做内容', items: ['ideas', 'reposts', 'board', 'ai', 'assets'] },
+    { label: '做内容', items: ['x-founder', 'ideas', 'reposts', 'board', 'ai', 'assets'] },
     { label: '发出去', items: ['calendar', 'publish'] },
     { label: '看效果', items: ['review', 'competitors'] },
     { label: '日常', items: ['todos', 'finance', 'accounts'] }

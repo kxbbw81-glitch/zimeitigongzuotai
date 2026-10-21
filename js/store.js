@@ -255,15 +255,29 @@
       localStorage.setItem(DB_KEY, JSON.stringify(db));
       /* ---------- 浏览器插件数据桥接 ----------
          插件的后台提醒读不到网页的 localStorage，save 之后顺路广播一份
-         快照：iframe 场景（侧边栏）由父页面收，标签页场景由注入的
-         content script 收，两者再转交给后台存进 chrome.storage。
+         提醒必需字段：iframe 场景（侧边栏）由父页面收，标签页场景由注入的
+         content script 收。不得把 AI 密钥、X 经历或草稿随整库送进插件。
          非插件环境下没有监听方，这条消息无人接收，无任何副作用。 */
       try {
-        const syncMsg = { source: 'mw-workbench', type: 'mw-sync', db: db };
+        const syncDb = {
+          contents: (db.contents || []).map(function (c) {
+            return { id: c.id, title: c.title, date: c.date, time: c.time, status: c.status, pf: c.platform };
+          }),
+          todos: (db.todos || []).map(function (t) {
+            return { id: t.id, title: t.title, date: t.date, time: t.time, done: t.done };
+          }),
+          sources: (db.sources || []).map(function (s) { return { id: s.id, name: s.name }; })
+        };
+        const syncMsg = { source: 'mw-workbench', type: 'mw-sync', db: syncDb };
         if (window.parent && window.parent !== window) window.parent.postMessage(syncMsg, '*');
         window.postMessage(syncMsg, '*');
       } catch (e) { /* 桥接失败不影响主流程 */ }
-    } catch (e) { console.warn('保存失败', e); }
+      return true;
+    } catch (e) {
+      console.warn('保存失败', e);
+      if (typeof MW.toast === 'function') MW.toast('本地保存失败，请导出备份并检查存储空间', 'error');
+      return false;
+    }
   };
 
   /* 本页内存里的数据是否已经被别处替换/更新过。
@@ -394,6 +408,15 @@
       if (!d.settings.license) d.settings.license = null;
       d.version = 8;
     }
+    /* v10：分发卖家信息——本机没有联系方式时，把 js/seller-info.js 里的
+       卖家联系方式写进「关于与联系」（已填的不覆盖，只补一次） */
+    if (!d.version || d.version < 10) {
+      d.settings = d.settings || {};
+      if (!d.settings.about || !d.settings.about.contactValue) {
+        d.settings.about = sellerAbout();
+      }
+      d.version = 10;
+    }
     return d;
   }
   /* 给外部（导入 / 手工修复）用 */
@@ -413,6 +436,9 @@
         if (!db.ritualLog || typeof db.ritualLog !== 'object') db.ritualLog = {};
         if (!db.settings || typeof db.settings !== 'object') db.settings = {};
         if (!db.settings.ai) db.settings.ai = { baseUrl: '', apiKey: '', model: '', provider: '' };
+        if (!db.xWorkbench || typeof db.xWorkbench !== 'object') db.xWorkbench = { accountId: '', experiences: [], drafts: [] };
+        if (!Array.isArray(db.xWorkbench.experiences)) db.xWorkbench.experiences = [];
+        if (!Array.isArray(db.xWorkbench.drafts)) db.xWorkbench.drafts = [];
         if (!db.settings.assets) {
           db.settings.assets = { onboarded: false, list: [], meta: {}, autoFolder: true, pending: false, lastSync: 0 };
         }
@@ -1074,9 +1100,20 @@
   /* ============================================================
      示例数据（首次打开自动载入，可一键重置）
      ============================================================ */
+  /* 卖家信息：js/seller-info.js 提供（window.MW_SELLER），没有则空联系方式 */
+  function sellerAbout() {
+    const s = (typeof MW_SELLER !== 'undefined') && MW_SELLER && MW_SELLER.about;
+    if (!s || !s.contactValue) return { contactLabel: '', contactValue: '', contactNote: '' };
+    return {
+      contactLabel: s.contactLabel || '联系',
+      contactValue: s.contactValue,
+      contactNote: s.contactNote || ''
+    };
+  }
+
   function seed() {
     return {
-      version: 7,
+      version: 10,
       accounts: [
         { id: 'acc_xhs1', platform: 'xhs', accountId: 'yanqiang_ai', name: '烟枪先森-AI搞钱', style: '干货实操',
           positioning: '用 AI 开发产品和业务系统的实战创业者', focus: ['AI工具实操', '独立站', '外贸CRM', '电商增长'],
@@ -1257,13 +1294,15 @@
         { id: 'as4', name: '3D 打印机产品图原图包', type: '图片', tags: ['产品图', '3D打印机'], accountId: 'acc_li', note: '素材盘/产品图/打印机', createdAt: '2026-09-20' }
       ],
       drafts: [],
+      xWorkbench: { accountId: '', experiences: [], drafts: [] },
       /* AI 接口（OpenAI 兼容）：不配置则所有 AI 功能走本地降级方案 */
       settings: {
         ai: { baseUrl: '', apiKey: '', model: '' },
         /* 素材库：只存索引与标注，文件在用户硬盘上（v6） */
         assets: { onboarded: false, list: [], meta: {}, autoFolder: true, pending: false, lastSync: 0 },
-        /* 关于与联系：联系方式随安装包/备份分发，license 为授权码（v8） */
-        about: { contactLabel: '', contactValue: '', contactNote: '' },
+        /* 关于与联系：联系方式随安装包/备份分发，license 为授权码（v8）；
+           有卖家信息（js/seller-info.js）时新用户首次启动自动带上（v10） */
+        about: sellerAbout(),
         license: null
       }
     };

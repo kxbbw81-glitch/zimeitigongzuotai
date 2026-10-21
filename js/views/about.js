@@ -7,7 +7,7 @@
   const MW = (window.MW = window.MW || {});
 
   /* 软件版本号：随安装包一起分发，买家反馈问题时先看这里 */
-  MW.VERSION = '1.0.2';
+  MW.VERSION = '1.0.3';
   MW.REPO_URL = 'https://github.com/kxbbw81-glitch/zimeitigongzuotai';
 
   /* ---------- 授权码（轻量本地校验） ----------
@@ -165,6 +165,7 @@
         sub: 'v' + MW.VERSION,
         body:
           '<div class="ab-changelog">' +
+            '<div class="ab-cl-item"><b>v1.0.3</b><span>「关于与联系」自动带上卖家联系方式——新安装与更新均生效，买家随时可联系到人</span></div>' +
             '<div class="ab-cl-item"><b>v1.0.2</b><span>AI 接口支持一键导入（扫描本机 Codex 配置 / 粘贴导入）</span></div>' +
             '<div class="ab-cl-item"><b>v1.0.1</b><span>新增转载模块：关注来源账号、记录对方更新、一键转带署名选题；浏览器插件支持公众号文章页捕获</span></div>' +
             '<div class="ab-cl-item"><b>v1.0.0</b><span>首个正式版：选题看板、发布日历、数据复盘、素材库、待办、账本、账号管理</span></div>' +
