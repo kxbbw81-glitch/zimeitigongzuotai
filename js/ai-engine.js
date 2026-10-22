@@ -1293,6 +1293,64 @@
       + '请严格按上述定位、受众、语气与配比产出，不要输出与配比无关的内容类型。\n';
   };
 
+  /* ============================================================
+     一稿多发：母稿 → 按账号定位适配成各平台版本
+     ------------------------------------------------------------
+     Easel 式流程落在工作台里的样子：母稿存原始素材，
+     每个目标账号按自己的定位/受众/语气/平台规范各生成一版。
+     接了大模型走 MW.ai.chat；没接就用本地 gen 产出可改的初稿，
+     两条路都返回 { title, body, local }，调用方无感。
+     注意：适配版是「初稿」不是「定稿」——发布前的核实是人工的，
+     所以生成的内容一律以未就绪状态进排期（检查项不预勾）。
+     ============================================================ */
+  MW.ai.adaptPrompt = function (master, acc) {
+    const pf = MW.pfOf(acc).name;
+    const body = (master.body || '').trim() || master.title;
+    return MW.ai.accountBrief(acc)
+      + '\n【任务】把下面这篇母稿改写成适合「' + pf + '」平台的发布版本。\n'
+      + '【母稿标题】' + master.title + '\n'
+      + '【母稿正文】\n' + body.slice(0, 4000) + '\n'
+      + '【平台规范】' + (PLATFORM_TIPS[acc.platform] || PLATFORM_TIPS.other) + '\n'
+      + '【改写要求】保留母稿的核心事实、数据与结论，不得编造；标题、开头、结构、语气、长度按平台规范与账号定位重写；若母稿语言与账号受众语言不一致，需完整翻译并本地化。\n'
+      + '【输出格式】第一行输出适配后的标题，空一行后输出正文，不要输出任何解释。';
+  };
+
+  /* 本地兜底：没接大模型时，用账号定位 + 平台规范组装可改的初稿 */
+  MW.ai.adaptLocal = function (master, acc) {
+    const d = MW.ai.gen({
+      accountId: acc.id, topic: master.title,
+      type: master.type || MW.ai.guessType(master.title),
+      platform: acc.platform, kws: ''
+    });
+    return { title: d.titles[0], body: MW.ai.draftText(d), local: true };
+  };
+
+  /* 解析模型输出：第一行当标题，其余当正文 */
+  MW.ai.parseAdapt = function (txt) {
+    const lines = String(txt || '').split(/\r?\n/);
+    let i = 0;
+    while (i < lines.length && !lines[i].trim()) i++;
+    const title = (lines[i] || '').trim().replace(/^[#>\s*-]+/, '').slice(0, 80) || '未命名适配版';
+    const body = lines.slice(i + 1).join('\n').trim();
+    return { title: title, body: body, local: false };
+  };
+
+  MW.ai.adapt = function (masterId, accountId) {
+    const db = MW.getDB();
+    const master = db.contents.find(function (c) { return c.id === masterId; });
+    const acc = MW.accOf(accountId);
+    if (!master || !acc) return Promise.resolve(null);
+    if (MW.ai.aiReady()) {
+      return MW.ai.chat(MW.ai.adaptPrompt(master, acc)).then(function (txt) {
+        if (!txt) return MW.ai.adaptLocal(master, acc);
+        const r = MW.ai.parseAdapt(txt);
+        /* 模型只回了一行（没正文）→ 退回本地初稿，别存个空壳 */
+        return r.body ? r : MW.ai.adaptLocal(master, acc);
+      }).catch(function () { return MW.ai.adaptLocal(master, acc); });
+    }
+    return Promise.resolve(MW.ai.adaptLocal(master, acc));
+  };
+
   /* 标题猜选题类型：AI 生成的标题没有类型标注，入库时按 6:2:1:1 归类用 */
   MW.ai.guessType = function (title) {
     const s = String(title || '');

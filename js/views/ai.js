@@ -85,6 +85,41 @@
 
   function draftText(d) { return MW.ai.draftText(d); }
 
+  /* 母稿与多平台版本：一稿多发的结果总览。
+     每个母稿下面挂着各平台的适配版，就绪度直接看——
+     差的项去发布页补，不用来这页找状态。 */
+  function mastersPanelHtml() {
+    const ms = MW.masters();
+    let h = '<div class="card"><div class="card-head"><div class="card-title">' +
+      MW.icon('layers', 15) + ' 母稿与多平台版本</div>' +
+      '<div class="card-extra">' + ms.length + ' 组</div></div>';
+    if (!ms.length) {
+      h += MW.ui.empty('暂无母稿', '在生成结果页点「一稿多发」：先存母稿，再按各账号定位适配');
+    } else {
+      h += ms.slice(0, 6).map(function (m) {
+        const vers = MW.adaptationsOf(m.id);
+        const vh = vers.length ? vers.map(function (c) {
+          const a = MW.accOf(c.accountId);
+          const ck = MW.checksOf(c);
+          const st = c.status === 'published'
+            ? '<em class="mp-st ok">已发布</em>'
+            : (ck.ready ? '<em class="mp-st ready">就绪待发</em>' : '<em class="mp-st">差 ' + (ck.total - ck.done) + ' 项</em>');
+          return '<div class="mp-ver">' +
+            '<span class="pf-chip sm" style="--pc:' + MW.pfOf(a).color + '">' + MW.pfOf(a).name + '</span>' +
+            '<span class="mp-ver-title" title="' + MW.esc(c.title) + '">' + MW.esc(c.title) + '</span>' +
+            st + '<span class="mp-ver-date">' + c.date.slice(5) + '</span></div>';
+        }).join('') : '<div class="mp-ver none">还没有适配版本</div>';
+        return '<div class="mp-item">' +
+          '<div class="mp-master"><span class="mp-badge">母稿</span>' +
+          '<span class="mp-master-title" onclick="MW.act.openContentModal(\'' + m.id + '\')" title="' + MW.esc(m.title) + '">' + MW.esc(m.title) + '</span>' +
+          '<button class="btn sm ghost" onclick="MW.act.adaptModal(\'' + m.id + '\')">' + MW.icon('layers', 12) + ' 适配账号</button></div>' +
+          '<div class="mp-vers">' + vh + '</div></div>';
+      }).join('');
+      if (ms.length > 6) h += '<div class="form-hint">仅显示最近 6 组母稿，完整记录在内容日历</div>';
+    }
+    return h + '</div>';
+  }
+
   function renderAiResult() {
     const box = document.getElementById('ai-result');
     if (!box) return;
@@ -121,7 +156,7 @@
       '<button class="btn" onclick="MW.copy(' + JSON.stringify(draftText(d)).replace(/"/g, '&quot;') + ')">' + MW.icon('copy', 13) + ' 复制全文</button>' +
       '<button class="btn" onclick="MW.act.aiSaveDraft()">' + MW.icon('download', 13) + ' 保存草稿</button>' +
       '<button class="btn" onclick="MW.act.aiToTopic()">' + MW.icon('kanban', 13) + ' 存为选题</button>' +
-      '<button class="btn" onclick="MW.act.aiDistribute()">' + MW.icon('layers', 13) + ' 分发多平台</button>' +
+      '<button class="btn" onclick="MW.act.aiAdapt()" title="先存为母稿，再按各账号定位改写成多平台版本">' + MW.icon('layers', 13) + ' 一稿多发</button>' +
       '<button class="btn primary" onclick="MW.act.aiSchedule()">' + MW.icon('calendar', 13) + ' 排到日历</button>' +
       '</div>';
 
@@ -179,55 +214,113 @@
     MW.goto('#/calendar');
   };
 
-  /* 一条内容分发到多个平台账号：多平台博主的日常动作 */
-  MW.act.aiDistribute = function () {
+  /* 一稿多发：把当前生成结果先存成母稿（原始素材），再按各账号定位适配出多平台版本。
+     母稿本身是来源账号那条内容，适配版本走排期，发布前逐条人工核实。 */
+  MW.act.aiAdapt = function () {
     if (!aiLast) return;
     const db = MW.getDB();
-    const src = db.accounts.find(function (a) { return a.id === aiLast.accountId; });
-    const srcFocus = (src && src.focus) || [];
+    const master = {
+      id: MW.uid(), title: aiLast.titles[0], accountId: aiLast.accountId,
+      platform: aiLast.platform, platformName: aiLast.platformName || '',
+      date: MW.dateStr(), time: MW.ai.pfTime(aiLast.platform), status: 'scheduled',
+      topicId: aiTopicId || '', focus: MW.guessFocus(aiLast.accountId, aiLast.topic),
+      master: true, body: MW.ai.draftText(aiLast),
+      checks: {}, metrics: null, note: '母稿：多平台分发的原始素材', createdAt: MW.dateStr()
+    };
+    db.contents.push(master);
+    MW.save();
+    MW.act.adaptModal(master.id);
+  };
+
+  /* 母稿适配弹窗：勾选目标账号 → 按各账号定位逐个生成 → 建成排期。
+     共享给 AI 文案台（从生成结果发家）和内容日历（把已有排期升为母稿）。
+     生成是异步的：弹窗挂着进度逐篇跑，跑完自己关，不阻塞界面。 */
+  MW.act.adaptModal = function (masterId) {
+    const db = MW.getDB();
+    const master = db.contents.find(function (c) { return c.id === masterId; });
+    if (!master) return;
+    /* 从日历/发布页进来时这条内容还没母稿名分——就地升为母稿 */
+    if (!master.master) { master.master = true; MW.save(); }
     const others = db.accounts.filter(function (a) {
-      return a.id !== aiLast.accountId && a.status === 'active';
+      return a.status === 'active' && a.id !== master.accountId;
     });
-    if (!others.length) { MW.toast('暂无其他可分发账号', 'error'); return; }
+    if (!others.length) { MW.toast('暂无其他可分发的账号', 'error'); return; }
+    const hasVer = {};
+    MW.adaptationsOf(master.id).forEach(function (c) { hasVer[c.accountId] = true; });
+    const srcFocus = (MW.accOf(master.accountId) || {}).focus || [];
 
     const rows = others.map(function (a) {
       /* 模糊匹配：'CRM' 命中 '外贸CRM'，'增长' 命中 '电商增长' */
       const hit = (a.focus || []).some(function (f) {
         return srcFocus.some(function (s) { return s.indexOf(f) >= 0 || f.indexOf(s) >= 0; });
       });
-      return '<label class="dist-row">' +
-        '<input type="checkbox" id="dist-' + a.id + '"' + (hit ? ' checked' : '') + '>' +
+      const seen = !!hasVer[a.id];
+      return '<label class="dist-row' + (seen ? ' has' : '') + '">' +
+        '<input type="checkbox" id="adapt-' + a.id + '"' + (hit && !seen ? ' checked' : '') + '>' +
         '<span class="as-dot" style="background:' + MW.pfOf(a).color + '"></span>' +
         '<span class="dist-name">' + MW.esc(a.name) + '</span>' +
         '<span class="dist-pf">' + MW.pfOf(a).name + '</span>' +
-        (hit ? '<span class="dist-fit">聚焦相近</span>' : '<span class="dist-fit off">定位不同，需改写</span>') +
+        (seen ? '<span class="dist-fit">已有版本，将重新生成</span>'
+          : (hit ? '<span class="dist-fit">聚焦相近</span>' : '<span class="dist-fit off">定位不同，将按本号定位改写</span>')) +
         '</label>';
     }).join('');
 
     MW.modal({
-      title: '分发到其他平台', sub: '已默认勾选内容聚焦相近的账号',
+      title: '一稿多发 · 适配其他账号',
+      sub: '母稿：' + MW.esc(master.title),
       body: '<div class="dist-list">' + rows + '</div>' +
-        MW.ui.row('排期日期', '<input id="dist-date" type="date" value="' + MW.addDays(MW.dateStr(), 1) + '">',
-          '时间为各平台建议时段，之后可在日历里拖拽改期'),
-      okText: '创建排期',
+        MW.ui.row('排期日期', '<input id="adapt-date" type="date" value="' + MW.addDays(MW.dateStr(), 1) + '">',
+          '发布时间取各平台建议时段，之后可在日历里拖拽改期') +
+        '<div class="form-hint">' + (MW.ai.aiReady()
+          ? '按各账号的定位、受众与平台规范逐篇改写；生成后请逐条核实事实再发布。'
+          : 'AI 接口未配置：将按账号定位生成本地初稿（标题 / 钩子 / 大纲 / 标签），正文需人工补全后再发。') + '</div>' +
+        '<div class="adapt-status" id="adapt-status"></div>',
+      okText: '开始适配',
       onOk: function (root) {
-        const date = root.querySelector('#dist-date').value || MW.addDays(MW.dateStr(), 1);
-        let n = 0;
-        others.forEach(function (a) {
-          const cb = root.querySelector('#dist-' + a.id);
-          if (!cb || !cb.checked) return;
-          db.contents.push({
-            id: MW.uid(), title: aiLast.titles[0], accountId: a.id, platform: a.platform,
-            platformName: a.platform === 'custom' ? (a.platformName || '') : '',
-            date: date, time: MW.ai.pfTime(a.platform), status: 'scheduled',
-            topicId: '', metrics: null, focus: MW.guessFocus(a.id, aiLast.topic),
-            note: '与「' + (src ? src.name : '同源') + '」同选题，需按本号定位改写', createdAt: MW.dateStr()
-          });
-          n++;
+        const date = (root.querySelector('#adapt-date').value || '').trim() || MW.addDays(MW.dateStr(), 1);
+        const picked = others.filter(function (a) {
+          const cb = root.querySelector('#adapt-' + a.id);
+          return cb && cb.checked;
         });
-        MW.save();
-        MW.toast(n ? '已创建 ' + n + ' 条跨平台排期，去日历看看' : '没有勾选任何账号');
-        if (n) setTimeout(function () { MW.goto('#/calendar'); }, 400);
+        if (!picked.length) { MW.toast('没有勾选任何账号', 'error'); return false; }
+        const okBtn = document.getElementById('modal-ok');
+        if (okBtn) { okBtn.disabled = true; okBtn.textContent = '适配中…'; }
+        const st = document.getElementById('adapt-status');
+        let i = 0, okN = 0;
+        (function step() {
+          if (i >= picked.length) {
+            MW.save(); MW.render(); MW.closeModal();
+            MW.toast('已生成 ' + okN + ' 个平台版本，发布前请逐条核实');
+            setTimeout(function () { MW.goto('#/calendar'); }, 400);
+            return;
+          }
+          const a = picked[i]; i++;
+          if (st) st.textContent = '正在适配「' + a.name + '」（' + i + ' / ' + picked.length + '）…';
+          MW.ai.adapt(master.id, a.id).then(function (r) {
+            if (r) {
+              /* 同一账号已有适配版本 → 原地更新，不堆重复记录 */
+              const exist = MW.adaptationsOf(master.id).find(function (x) { return x.accountId === a.id; });
+              if (exist) {
+                exist.title = r.title; exist.body = r.body;
+                exist.date = date; exist.time = MW.ai.pfTime(a.platform);
+                exist.note = '适配自母稿「' + master.title + '」';
+              } else {
+                db.contents.push({
+                  id: MW.uid(), title: r.title, accountId: a.id, platform: a.platform,
+                  platformName: a.platform === 'custom' ? (a.platformName || '') : '',
+                  date: date, time: MW.ai.pfTime(a.platform), status: 'scheduled',
+                  masterId: master.id, topicId: master.topicId || '',
+                  focus: MW.guessFocus(a.id, master.title), body: r.body,
+                  checks: {}, metrics: null,
+                  note: '适配自母稿「' + master.title + '」', createdAt: MW.dateStr()
+                });
+              }
+              okN++;
+            }
+            step();
+          });
+        })();
+        return false;   /* 异步没跑完，别关弹窗 */
       }
     });
   };
@@ -314,6 +407,8 @@
         }).join('');
       }
       html += '</div>';
+      html += '</div>';
+      html += mastersPanelHtml();
       html += '</div>';
 
       /* 右列：结果 */

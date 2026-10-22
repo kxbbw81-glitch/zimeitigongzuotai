@@ -114,7 +114,14 @@
         '对应该账号的一个内容聚焦方向，账号页会统计每个方向的产出');
 
     const m = c && c.metrics ? c.metrics : { views: 0, likes: 0, comments: 0, collects: 0, shares: 0, newFollowers: 0 };
-    body += '<div class="form-sep">数据（发布后补充，用于复盘）</div>' +
+    /* 适配版：顶部提示来自哪篇母稿，正文以母稿素材为准，别改着改着跑偏 */
+    const fromMaster = c ? MW.masterOf(c) : null;
+    body += (fromMaster
+      ? '<div class="form-hint" style="margin-bottom:8px">' + MW.icon('layers', 12) +
+        ' 本条适配自母稿《' + MW.esc(fromMaster.title) + '》，改写时以母稿事实与数据为准 · ' +
+        '<a href="javascript:MW.act.openContentModal(\'' + fromMaster.id + '\')">查看母稿</a></div>'
+      : '') +
+      '<div class="form-sep">数据（发布后补充，用于复盘）</div>' +
       '<div class="form-3col">' +
         MW.ui.row('浏览', '<input id="c-views" type="number" min="0" value="' + m.views + '">') +
         MW.ui.row('点赞', '<input id="c-likes" type="number" min="0" value="' + m.likes + '">') +
@@ -176,7 +183,8 @@
       if (foot) {
         const extra = document.createElement('div');
         extra.className = 'modal-foot-extra';
-        extra.innerHTML = '<button class="btn sm danger-ghost" onclick="MW.act.delContent(\'' + c.id + '\')">' + MW.icon('trash', 13) + ' 删除</button>';
+        extra.innerHTML = '<button class="btn sm" onclick="MW.act.adaptModal(\'' + c.id + '\')" title="把本篇作为母稿，按其他账号定位生成多平台版本">' + MW.icon('layers', 13) + ' 一稿多发</button>' +
+          '<button class="btn sm danger-ghost" onclick="MW.act.delContent(\'' + c.id + '\')">' + MW.icon('trash', 13) + ' 删除</button>';
         foot.appendChild(extra);
       }
     }
@@ -274,8 +282,12 @@
           dayContents.slice(0, 3).map(function (c) {
             const acc = db.accounts.find(function (a) { return a.id === c.accountId; });
             const pc = acc ? MW.pfOf(acc).color : '#999';
+            /* 一稿多发关系：母稿/适配版在日历里个小点，鼠标悬停看说明 */
+            const mdot = c.master ? '<span class="cal-dot master" title="母稿 · 多平台分发的原始素材"></span>'
+              : (c.masterId ? '<span class="cal-dot adpt" title="平台适配版 · 由母稿按本号定位改写"></span>' : '');
             return '<div class="cal-chip' + (c.status === 'published' ? ' published' : '') + '" data-id="' + c.id + '" style="--pc:' + pc + '">' +
               '<span class="cal-chip-time">' + (c.time || '') + '</span>' +
+              mdot +
               '<span class="cal-chip-title">' + MW.esc(c.title) + '</span></div>';
           }).join('') +
           (dayContents.length > 3 ? '<div class="cal-more">+' + (dayContents.length - 3) + ' 篇</div>' : '') +

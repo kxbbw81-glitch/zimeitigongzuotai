@@ -338,6 +338,21 @@
     return '今天 ' + n + ' 条 · ' + doneN + ' 条已发';
   }
 
+  /* 一稿多发关系标识：母稿显示挂了几个版本，适配版显示来自哪篇母稿。
+     同源内容在不同平台排期里长得像，没有这个标识用户会以为排重了。 */
+  function masterChip(c) {
+    const mm = MW.masterOf(c);
+    if (mm) {
+      return '<span class="pub-master adpt" title="适配自母稿：' + MW.esc(mm.title) + '">' +
+        MW.icon('layers', 11) + ' 适配版</span>';
+    }
+    if (c.master) {
+      return '<span class="pub-master" title="多平台分发的原始素材，各平台版本由它改写">' +
+        MW.icon('layers', 11) + ' 母稿 · ' + MW.adaptationsOf(c.id).length + ' 版</span>';
+    }
+    return '';
+  }
+
   /* 单行：时间 / 平台 / 标题 / 检查清单 / 状态 / 操作 */
   function rowHtml(c, today, isToday) {
     const pf = pfOf(c);
@@ -365,6 +380,8 @@
           (assetN > 0 ? '<span>' + MW.icon('folder', 11) + ' 素材库 ' + assetN + ' 个可用</span>' : '') +
           /* 本条内容实际绑定的素材数：从「号里有素材」精确到「这条用了什么」 */
           (boundN ? '<span class="pub-bound">' + MW.icon('check', 11) + ' 已绑 ' + boundN + ' 个素材</span>' : '') +
+          /* 一稿多发关系：母稿 / 适配版，一眼看出这条和别的平台那条同源 */
+          masterChip(c) +
           (c.url ? '<span>' + MW.icon('link', 11) + ' 有链接</span>' : '') +
         '</div>' +
         /* 检查清单只在还没发时有意义。已发布的行再摆四个未勾的框，

@@ -620,6 +620,31 @@
   };
 
   /* ============================================================
+     母稿与多平台适配版本（一稿多发）
+     ------------------------------------------------------------
+     母稿 = 一条标记 master:true 的 content，存原始素材/完整初稿；
+     适配版本 = masterId 指向母稿的 content，按目标账号的定位生成。
+     关系只靠这两个字段表达，不新建表——适配版本复用 contents 的
+     账号/平台/排期/检查项/发布记录，和普通内容走同一条动线，
+     日历、发布管理、复盘看到的都是同一批记录。
+     老数据没有这两个字段 → 普通内容，天然兼容。
+     ============================================================ */
+  MW.adaptationsOf = function (masterId) {
+    if (!masterId) return [];
+    return MW.getDB().contents.filter(function (c) { return c.masterId === masterId; });
+  };
+  MW.masterOf = function (c) {
+    if (!c || !c.masterId) return null;
+    return MW.getDB().contents.find(function (x) { return x.id === c.masterId; }) || null;
+  };
+  /* 母稿列表：最近创建的在前 */
+  MW.masters = function () {
+    const db = MW.getDB();
+    return db.contents.filter(function (c) { return c.master; })
+      .sort(function (a, b) { return (b.createdAt || '').localeCompare(a.createdAt || ''); });
+  };
+
+  /* ============================================================
      记账（订单式）
      ------------------------------------------------------------
      一笔订单只记一行：收了多少（amount）、本钱多少（cost）、赚了多少（amount-cost）。
