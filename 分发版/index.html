@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>社媒工作台 · 分发版 — 一稿多发，多平台内容分发</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%230f6e56'/%3E%3Cpath d='M12 4l2 5.5L19.5 12 14 13.5 12 19l-2-5.5L4.5 12 10 10.5z' fill='white'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<div id="app">
+  <aside id="sidebar"></aside>
+  <div id="main">
+    <header id="topbar">
+      <div class="tb-left">
+        <button class="icon-btn" id="menu-btn" title="菜单"></button>
+        <div class="tb-title" id="tb-title">工作台</div>
+        <div class="tb-sub" id="tb-sub"></div>
+      </div>
+      <div class="tb-right">
+        <span class="tb-date" id="tb-date"></span>
+        <button class="icon-btn" id="help-btn" title="使用指南"></button>
+        <div class="qa-wrap">
+          <button class="btn primary" id="qa-btn">+ 快速创建</button>
+          <div class="qa-menu" id="qa-menu">
+            <button onclick="MW.goto('#/ai')">写母稿</button>
+            <button onclick="MW.act.openContentModal()">添加排期</button>
+            <button onclick="MW.act.editAccount()">添加账号</button>
+            <button onclick="MW.act.aiSettings()">AI 接口设置</button>
+            <button onclick="MW.act.exportData()">导出备份</button>
+          </div>
+        </div>
+      </div>
+    </header>
+    <main id="view"></main>
+  </div>
+</div>
+<div id="modal-root"></div>
+<div id="toast-root"></div>
+<div class="side-mask" id="side-mask"></div>
+
+<script src="js/seller-info.js"></script>
+<script src="js/store.js"></script>
+<script src="js/icons.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/ai-engine.js"></script>
+<script src="js/views/home.js"></script>
+<script src="js/views/accounts.js"></script>
+<script src="js/views/calendar.js"></script>
+<script src="js/views/publish.js"></script>
+<script src="js/views/ai.js"></script>
+<script src="js/views/about.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
