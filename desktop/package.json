@@ -1,7 +1,7 @@
 {
   "name": "shemei-workbench-desktop",
   "productName": "社媒工作台",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "private": true,
   "description": "外贸社媒 + 自媒体一体化工作台 · 桌面版（Windows / macOS，支持 GitHub 热更新）",
   "license": "MIT",
