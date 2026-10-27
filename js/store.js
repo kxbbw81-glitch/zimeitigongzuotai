@@ -417,6 +417,14 @@
       }
       d.version = 10;
     }
+    /* v11：竞品库增加「内容动态」——每个竞品下挂 posts 数组
+       （标题/链接/发布日期/赞评藏/观察笔记），老数据补空数组 */
+    if (!d.version || d.version < 11) {
+      (d.competitors || []).forEach(function (c) {
+        if (!Array.isArray(c.posts)) c.posts = [];
+      });
+      d.version = 11;
+    }
     return d;
   }
   /* 给外部（导入 / 手工修复）用 */
@@ -1198,16 +1206,31 @@
       competitors: [
         { id: 'cp1', platform: 'xhs', name: 'AI 实操派', accountId: 'ai_shicaopai', category: 'AI工具', followers: 52300, freq: '日更',
           strategy: '每天一个工具实测加横评，封面统一大字报风格，评论区引导「进群领模板」',
-          snapshots: [{ date: '2026-09-14', followers: 49800 }, { date: '2026-09-28', followers: 51200 }, { date: '2026-10-12', followers: 52300 }], updatedAt: '2026-10-12' },
+          snapshots: [{ date: '2026-09-14', followers: 49800 }, { date: '2026-09-28', followers: 51200 }, { date: '2026-10-12', followers: 52300 }], updatedAt: '2026-10-12',
+          posts: [
+            { id: 'cp1p1', title: '5 个让 PPT 效率翻倍的 AI 技巧，第 3 个最离谱', link: 'https://www.xiaohongshu.com/explore/demo1', publishedAt: '2026-10-20', likes: 8200, comments: 312, saves: 5600, note: '合集类标题加数字钩子，收藏远高于点赞——工具属性强，用户当资料存。这类选题适合我用「AI 搞钱」角度重做' },
+            { id: 'cp1p2', title: '别再手动写周报了，这个提示词模板直接抄', link: 'https://www.xiaohongshu.com/explore/demo2', publishedAt: '2026-10-15', likes: 5400, comments: 198, saves: 4100, note: '模板引流套路：评论区扣「模板」领资料，私域转化路径清晰，值得学' }
+          ] },
         { id: 'cp2', platform: 'gzh', name: '增长研究所', accountId: 'growth_lab', category: '增长方法', followers: 38600, freq: '周3更',
           strategy: '深度长文加案例拆解，文末固定「工具箱」栏目引流私域',
-          snapshots: [{ date: '2026-09-14', followers: 37400 }, { date: '2026-09-28', followers: 38000 }, { date: '2026-10-12', followers: 38600 }], updatedAt: '2026-10-12' },
+          snapshots: [{ date: '2026-09-14', followers: 37400 }, { date: '2026-09-28', followers: 38000 }, { date: '2026-10-12', followers: 38600 }], updatedAt: '2026-10-12',
+          posts: [
+            { id: 'cp2p1', title: '一家县城奶茶店，如何用私域把复购做到 40%', link: 'https://mp.weixin.qq.com/s/demo3', publishedAt: '2026-10-18', likes: 2100, comments: 156, saves: 980, note: '小生意完整案例最吸粉，读者对「可复制的路径」买单，不追热点' },
+            { id: 'cp2p2', title: '我拆解了 100 篇爆款，发现标题都遵守这 3 条', link: 'https://mp.weixin.qq.com/s/demo4', publishedAt: '2026-10-11', likes: 1800, comments: 89, saves: 1200, note: '方法论合集加文末工具箱引流，长尾搜索流量稳定' }
+          ] },
         { id: 'cp3', platform: 'dy', name: '3D 打印工坊', accountId: '3d_workshop', category: '3D打印', followers: 126000, freq: '日更',
           strategy: '沉浸式打印过程视频加成品展示，直播挂车卖耗材',
-          snapshots: [{ date: '2026-09-14', followers: 118000 }, { date: '2026-09-28', followers: 122500 }, { date: '2026-10-12', followers: 126000 }], updatedAt: '2026-10-12' },
+          snapshots: [{ date: '2026-09-14', followers: 118000 }, { date: '2026-09-28', followers: 122500 }, { date: '2026-10-12', followers: 126000 }], updatedAt: '2026-10-12',
+          posts: [
+            { id: 'cp3p1', title: '凌晨 3 点的打印车间，第 47 次失败终于成功', link: 'https://www.douyin.com/video/demo5', publishedAt: '2026-10-19', likes: 46000, comments: 2100, saves: 8900, note: '过程叙事加情绪钩子，沉浸式打印视频完播率极高；直播挂车直接转化耗材，内容到变现闭环最短' },
+            { id: 'cp3p2', title: '这个模型打印只要 6 小时，材料费 3 块钱', link: 'https://www.douyin.com/video/demo6', publishedAt: '2026-10-14', likes: 28000, comments: 1300, saves: 5200, note: '数字对比标题，评论区问「链接」的多——内容即货架，NexFab 耗材可以复刻这套' }
+          ] },
         { id: 'cp4', platform: 'yt', name: 'CrossBorder Wang', accountId: 'cbwang', category: '外贸跨境', followers: 8600, freq: '周2更',
           strategy: '工厂实拍加避坑指南，标题带数字，简介埋独立站链接',
-          snapshots: [{ date: '2026-09-14', followers: 8100 }, { date: '2026-09-28', followers: 8400 }, { date: '2026-10-12', followers: 8600 }], updatedAt: '2026-10-12' }
+          snapshots: [{ date: '2026-09-14', followers: 8100 }, { date: '2026-09-28', followers: 8400 }, { date: '2026-10-12', followers: 8600 }], updatedAt: '2026-10-12',
+          posts: [
+            { id: 'cp4p1', title: '义乌进货避坑：这 5 类货千万别碰', link: 'https://www.youtube.com/watch?v=demo7', publishedAt: '2026-10-17', likes: 640, comments: 88, saves: 410, note: '避坑指南加工厂实拍，标题带数字；简介埋独立站链接，B 端询盘主要来路' }
+          ] }
       ],
       sources: [
         { id: 'src1', name: '数字生命卡兹克', platform: 'gzh', accountId: 'Kaslimi',

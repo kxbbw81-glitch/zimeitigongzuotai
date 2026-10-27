@@ -1,10 +1,20 @@
 /* ============================================================
-   视图 · 竞品库（追踪同赛道账号，对比打法与内容策略）
+   视图 · 竞品库（追踪同赛道账号：粉丝数据 + 内容动态 + 打法策略）
+   - 账号级：粉丝快照、趋势、更新频率、对标等级
+   - 内容级：竞品发了什么（标题/链接/互动数据/观察笔记）
    ============================================================ */
 (function () {
   const MW = (window.MW = window.MW || {});
   MW.act = MW.act || {};
   MW.views = MW.views || {};
+
+  /* 竞品的内容动态按发布日期倒序（新发的在前） */
+  function postsOf(c) {
+    return (c.posts || []).slice().sort(function (a, b) {
+      return (b.publishedAt || '').localeCompare(a.publishedAt || '');
+    });
+  }
+  MW.compPostsOf = postsOf;
 
   MW.act.openCompetitorModal = function (id) {
     const db = MW.getDB();
@@ -48,7 +58,7 @@
             c.snapshots.push({ date: MW.dateStr(), followers: obj.followers });
           }
         } else {
-          db.competitors.push(Object.assign({ id: MW.uid(), snapshots: [{ date: MW.dateStr(), followers: +obj.followers || 0 }] }, obj));
+          db.competitors.push(Object.assign({ id: MW.uid(), snapshots: [{ date: MW.dateStr(), followers: +obj.followers || 0 }], posts: [] }, obj));
         }
         MW.save(); MW.render();
         MW.toast(c ? '竞品已更新' : '竞品已添加');
@@ -81,38 +91,176 @@
     });
   };
 
+  /* ---------- 竞品内容动态：记一条 / 删一条 ---------- */
+  MW.act.openCompPostModal = function (compId, postId) {
+    const db = MW.getDB();
+    const c = db.competitors.find(function (x) { return x.id === compId; });
+    if (!c) return;
+    const p = postId ? postsOf(c).find(function (x) { return x.id === postId; }) : null;
+    const body =
+      MW.ui.row('内容标题', '<input id="cpp-title" placeholder="对方这篇内容的标题" value="' + MW.esc(p ? p.title : '') + '">') +
+      '<div class="form-2col">' +
+        MW.ui.row('内容链接', '<input id="cpp-link" placeholder="粘贴原文链接，回头看原文用" value="' + MW.esc(p ? p.link || '' : '') + '">') +
+        MW.ui.row('发布日期', '<input id="cpp-date" type="date" value="' + (p ? p.publishedAt : MW.dateStr()) + '">') +
+      '</div>' +
+      '<div class="form-3col">' +
+        MW.ui.row('点赞', '<input id="cpp-likes" type="number" min="0" value="' + (p ? p.likes || 0 : 0) + '">') +
+        MW.ui.row('评论', '<input id="cpp-comments" type="number" min="0" value="' + (p ? p.comments || 0 : 0) + '">') +
+        MW.ui.row('收藏', '<input id="cpp-saves" type="number" min="0" value="' + (p ? p.saves || 0 : 0) + '">') +
+      '</div>' +
+      MW.ui.row('观察笔记', '<textarea id="cpp-note" rows="3" placeholder="这条为什么数据好？选题、封面、钩子还是节奏？我能学到什么……">' + MW.esc(p ? p.note || '' : '') + '</textarea>', '写下你的判断，下次翻回来就是素材');
+
+    MW.modal({
+      title: p ? '编辑内容动态' : '记一条内容动态',
+      sub: c.name,
+      body: body,
+      okText: '保存',
+      onOk: function (root) {
+        const v = function (id2) { return (root.querySelector('#' + id2).value || '').trim(); };
+        const title = v('cpp-title');
+        if (!title) { MW.toast('请填写内容标题', 'error'); return false; }
+        const obj = {
+          title: title, link: v('cpp-link'), publishedAt: v('cpp-date') || MW.dateStr(),
+          likes: +v('cpp-likes') || 0, comments: +v('cpp-comments') || 0, saves: +v('cpp-saves') || 0,
+          note: v('cpp-note')
+        };
+        c.posts = c.posts || [];
+        if (p) {
+          Object.assign(p, obj);
+        } else {
+          c.posts.push(Object.assign({ id: MW.uid() }, obj));
+        }
+        MW.save(); MW.render();
+        MW.toast(p ? '动态已更新' : '已记录');
+      }
+    });
+  };
+
+  MW.act.delCompPost = function (compId, postId) {
+    const db = MW.getDB();
+    const c = db.competitors.find(function (x) { return x.id === compId; });
+    if (!c) return;
+    MW.confirm('确定删除这条内容动态？', function () {
+      c.posts = (c.posts || []).filter(function (x) { return x.id !== postId; });
+      MW.save(); MW.render();
+      MW.toast('已删除');
+    }, { okText: '删除' });
+  };
+
   MW.act.delCompetitor = function (id) {
     const db = MW.getDB();
-    MW.confirm('确定删除这个竞品？', function () {
+    MW.confirm('确定删除这个竞品？其内容动态记录会一并删除。', function () {
       db.competitors = db.competitors.filter(function (x) { return x.id !== id; });
       MW.save(); MW.render();
       MW.toast('已删除');
     }, { okText: '删除' });
   };
 
+  /* ---------- 竞品详情：账号数据 + 内容动态 ---------- */
+  MW.act.openCompDetail = function (id) {
+    const db = MW.getDB();
+    const c = db.competitors.find(function (x) { return x.id === id; });
+    if (!c) return;
+    const snaps = c.snapshots || [];
+    const delta = snaps.length >= 2 ? snaps[snaps.length - 1].followers - snaps[snaps.length - 2].followers : 0;
+    const posts = postsOf(c);
+
+    let html = '<div class="cpd-head">' +
+      '<div class="cpd-name">' + MW.esc(c.name) +
+        '<span class="cp-level' + (c.level === '一般关注' ? ' gray' : '') + '">' + MW.esc(c.level || '核心对标') + '</span></div>' +
+      '<div class="cpd-meta">' + MW.ui.pfChip(c.platform, true) +
+        '<span class="cpd-cat">' + MW.esc(c.category || '未分类') + '</span>' +
+        '<span class="cpd-id">' + MW.esc(c.accountId || '未填账号 ID') + '</span></div>' +
+      '</div>' +
+
+      '<div class="cpd-stats">' +
+        '<div class="cpd-stat"><b>' + MW.fmt.num(c.followers) + '</b><span>粉丝</span></div>' +
+        '<div class="cpd-stat"><b class="' + (delta >= 0 ? 'up' : 'down') + '">' + (delta >= 0 ? '+' : '') + MW.fmt.num(delta) + '</b><span>较上次快照</span></div>' +
+        '<div class="cpd-stat"><b>' + posts.length + '</b><span>条内容动态</span></div>' +
+        '<div class="cpd-stat"><b>' + MW.esc(c.freq || '--') + '</b><span>更新频率</span></div>' +
+      '</div>' +
+
+      (snaps.length >= 2 ? '<div class="cpd-trend"><div class="cpd-sec-title">' + MW.icon('trend', 13) + ' 粉丝趋势</div>' +
+        MW.charts.sparkline(snaps.slice(-8).map(function (s) { return s.followers; }), 'var(--primary)') + '</div>' : '') +
+
+      (c.strategy ? '<div class="cpd-strat"><div class="cpd-sec-title">' + MW.icon('target', 13) + ' 打法与内容策略</div>' +
+        '<div class="cpd-strat-text">' + MW.esc(c.strategy) + '</div></div>' : '') +
+
+      '<div class="cpd-sec-title cpd-posts-title">' + MW.icon('file', 13) + ' 内容动态（' + posts.length + '）</div>';
+
+    if (!posts.length) {
+      html += '<div class="cpd-empty">还没有记录过对方的内容。刷到值得研究的爆款或反常操作，就记一条——标题、链接、互动数据和你的判断。</div>';
+    } else {
+      html += posts.map(function (p) {
+        const nums = (p.likes ? '赞 ' + MW.fmt.num(p.likes) + ' · ' : '') +
+          (p.comments ? '评 ' + MW.fmt.num(p.comments) + ' · ' : '') +
+          (p.saves ? '藏 ' + MW.fmt.num(p.saves) : '');
+        return '<div class="cpp-row">' +
+          '<div class="cpp-top">' +
+            '<span class="cpp-date">' + MW.esc((p.publishedAt || '').slice(5)) + '</span>' +
+            (p.link
+              ? '<a class="cpp-title" href="' + MW.esc(p.link) + '" target="_blank" rel="noopener" title="打开原文">' + MW.esc(p.title) + ' ↗</a>'
+              : '<span class="cpp-title">' + MW.esc(p.title) + '</span>') +
+            (nums ? '<span class="cpp-nums">' + nums.replace(/ · $/, '') + '</span>' : '') +
+          '</div>' +
+          (p.note ? '<div class="cpp-note">' + MW.icon('note', 12) + ' ' + MW.esc(p.note) + '</div>' : '') +
+          '<div class="cpp-ops">' +
+            '<button class="btn sm ghost" onclick="MW.act.openCompPostModal(\'' + c.id + '\',\'' + p.id + '\')">编辑</button>' +
+            '<button class="btn sm danger-ghost" onclick="MW.act.delCompPost(\'' + c.id + '\',\'' + p.id + '\')">删除</button>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+    }
+
+    MW.modal({
+      title: '竞品详情',
+      sub: '数据与内容，分开看',
+      body: '<div class="cpd">' + html + '</div>',
+      footer: false,
+      onOk: function () { }
+    });
+    /* 自定义底部操作条 */
+    const root = document.getElementById('modal-root');
+    const foot = document.createElement('div');
+    foot.className = 'modal-foot';
+    foot.innerHTML = '<div class="modal-foot-extra">' +
+      '<button class="btn" id="cpd-snap">记粉丝快照</button>' +
+      '<button class="btn" id="cpd-edit">编辑账号</button>' +
+      '<button class="btn primary" id="cpd-add">' + MW.icon('plus', 13) + ' 记一条内容动态</button>' +
+      '<button class="btn" id="cpd-close">关闭</button></div>';
+    root.querySelector('.modal').appendChild(foot);
+    document.getElementById('cpd-snap').onclick = function () { MW.act.openSnapshotModal(c.id); };
+    document.getElementById('cpd-edit').onclick = function () { MW.act.openCompetitorModal(c.id); };
+    document.getElementById('cpd-add').onclick = function () { MW.act.openCompPostModal(c.id); };
+    document.getElementById('cpd-close').onclick = MW.closeModal;
+  };
+
   MW.views['competitors'] = {
     id: 'competitors', name: '竞品库', icon: 'eye',
-    sub: '追踪同赛道账号数据，对比打法和内容策略',
+    sub: '追踪同赛道账号的粉丝数据与内容动态，对比打法',
     render: function (root) {
       const db = MW.getDB();
+      const totalPosts = db.competitors.reduce(function (n, c) { return n + (c.posts || []).length; }, 0);
 
       let html = '<div class="page-head"><div class="page-title">竞品库</div>' +
-        '<div class="page-sub">' + db.competitors.length + ' 个对标账号 · 建议每周记录一次粉丝快照</div>' +
+        '<div class="page-sub">' + db.competitors.length + ' 个对标账号 · ' + totalPosts + ' 条内容动态 · 建议每周记录一次粉丝快照</div>' +
         '<button class="btn primary" onclick="MW.act.openCompetitorModal()">' + MW.icon('plus', 14) + ' 添加竞品</button></div>';
 
       if (!db.competitors.length) {
-        html += MW.ui.empty('暂无竞品', '添加同赛道账号，持续追踪其运营策略');
+        html += MW.ui.empty('暂无竞品', '添加同赛道账号，持续追踪其运营策略与内容动态');
         root.innerHTML = html;
         return;
       }
 
       html += '<div class="card table-card"><table class="table"><thead><tr>' +
-        '<th>账号</th><th>平台</th><th>赛道</th><th>粉丝趋势</th><th>粉丝数</th><th>更新频率</th><th>打法与策略</th><th>更新于</th><th>操作</th>' +
+        '<th>账号</th><th>平台</th><th>赛道</th><th>粉丝趋势</th><th>粉丝数</th><th>更新频率</th><th>内容动态</th><th>打法与策略</th><th>更新于</th><th>操作</th>' +
         '</tr></thead><tbody>';
 
       db.competitors.forEach(function (c) {
         const snaps = (c.snapshots || []).slice(-6);
         const delta = snaps.length >= 2 ? snaps[snaps.length - 1].followers - snaps[snaps.length - 2].followers : 0;
+        const posts = postsOf(c);
+        const last = posts.length ? posts[0] : null;
         html += '<tr>' +
           '<td><div class="cp-name">' + MW.esc(c.name) +
             '<span class="cp-level' + (c.level === '一般关注' ? ' gray' : '') + '">' + MW.esc(c.level || '核心对标') + '</span></div>' +
@@ -122,15 +270,54 @@
           '<td>' + MW.charts.sparkline(snaps.map(function (s) { return s.followers; }), 'var(--primary)') + '</td>' +
           '<td><b>' + MW.fmt.num(c.followers) + '</b><span class="' + (delta >= 0 ? 'up' : 'down') + '">' + (delta >= 0 ? '+' : '') + MW.fmt.num(delta) + '</span></td>' +
           '<td>' + MW.esc(c.freq || '--') + '</td>' +
+          '<td><button class="btn sm ghost cp-posts-btn" onclick="MW.act.openCompDetail(\'' + c.id + '\')" title="查看内容动态">' +
+            (posts.length ? '<b>' + posts.length + '</b> 条' : '记动态') +
+            (last ? '<span class="cp-posts-last">最近 ' + MW.esc((last.publishedAt || '').slice(5)) + '</span>' : '') +
+          '</button></td>' +
           '<td class="cp-strategy">' + MW.esc(c.strategy || '--') + '</td>' +
           '<td>' + (c.updatedAt || '--').slice(5) + '</td>' +
-          '<td class="td-actions"><button class="btn sm" onclick="MW.act.openSnapshotModal(\'' + c.id + '\')">记快照</button>' +
+          '<td class="td-actions"><button class="btn sm" onclick="MW.act.openCompDetail(\'' + c.id + '\')">详情</button>' +
+          '<button class="btn sm" onclick="MW.act.openSnapshotModal(\'' + c.id + '\')">记快照</button>' +
           '<button class="btn sm" onclick="MW.act.openCompetitorModal(\'' + c.id + '\')">编辑</button>' +
           '<button class="btn sm danger-ghost" onclick="MW.act.delCompetitor(\'' + c.id + '\')">' + MW.icon('trash', 12) + '</button></td>' +
           '</tr>';
       });
 
       html += '</tbody></table></div>';
+
+      /* ---------- 跨竞品的内容动态流 ---------- */
+      const feed = [];
+      db.competitors.forEach(function (c) {
+        (c.posts || []).forEach(function (p) {
+          feed.push({ c: c, p: p });
+        });
+      });
+      feed.sort(function (a, b) {
+        return (b.p.publishedAt || '').localeCompare(a.p.publishedAt || '');
+      });
+
+      if (feed.length) {
+        html += '<div class="card compare-card"><div class="card-head"><div class="card-title">' +
+          MW.icon('flame', 15) + ' 竞品内容动态 · 最近记录</div>' +
+          '<div class="card-extra"><span class="rp-chip info">' + feed.length + ' 条</span></div></div>' +
+          '<div class="cf-list">' +
+          feed.slice(0, 8).map(function (it) {
+            const p = it.p;
+            const nums = (p.likes ? '赞 ' + MW.fmt.num(p.likes) + ' · ' : '') +
+              (p.comments ? '评 ' + MW.fmt.num(p.comments) + ' · ' : '') +
+              (p.saves ? '藏 ' + MW.fmt.num(p.saves) : '');
+            return '<div class="cf-row" onclick="MW.act.openCompDetail(\'' + it.c.id + '\')" title="查看 ' + MW.esc(it.c.name) + ' 的全部动态">' +
+              '<span class="cf-who">' + MW.esc(it.c.name) + '</span>' +
+              '<span class="cf-date">' + MW.esc((p.publishedAt || '').slice(5)) + '</span>' +
+              (p.link
+                ? '<a class="cf-title" href="' + MW.esc(p.link) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()">' + MW.esc(p.title) + ' ↗</a>'
+                : '<span class="cf-title">' + MW.esc(p.title) + '</span>') +
+              (nums ? '<span class="cf-nums">' + nums.replace(/ · $/, '') + '</span>' : '') +
+              (p.note ? '<span class="cf-note" title="' + MW.esc(p.note) + '">' + MW.icon('note', 11) + ' ' + MW.esc(p.note) + '</span>' : '') +
+            '</div>';
+          }).join('') +
+          '</div></div>';
+      }
 
       /* 策略对比提示 */
       html += '<div class="card compare-card"><div class="card-title">' + MW.icon('target', 15) + ' 对标结论（建议每周填一次）</div>' +

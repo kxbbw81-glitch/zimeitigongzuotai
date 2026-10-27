@@ -6,9 +6,10 @@
   const MW = (window.MW = window.MW || {});
 
   /* 导航顺序 = 分发博主的日常动线：
-     首页看今天发什么 → 写母稿 → 排日历 → 发布检查 → 账号定位。
-     「关于与联系」从侧栏底部数据管理区进（与旗舰版一致）。 */
+     竞品侦察（看对标在发什么）→ 首页看今天发什么 → 写母稿 → 排日历 →
+     发布检查 → 账号定位。「关于与联系」从侧栏底部数据管理区进。 */
   const NAV = [
+    { label: '侦察', items: ['competitors'] },
     { label: '动线', items: ['home', 'ai', 'calendar', 'publish'] },
     { label: '设置', items: ['accounts'] }
   ];
@@ -131,6 +132,7 @@
           Object.keys(db).forEach(function (k) { delete db[k]; });
           db.accounts = Array.isArray(data.accounts) ? data.accounts : [];
           db.contents = Array.isArray(data.contents) ? data.contents : [];
+          db.competitors = Array.isArray(data.competitors) ? data.competitors : [];
           db.settings = data.settings && typeof data.settings === 'object' ? data.settings : {};
           if (!db.settings.ai) db.settings.ai = { baseUrl: '', apiKey: '', model: '', provider: '' };
           if (!db.settings.about) db.settings.about = { contactLabel: '', contactValue: '', contactNote: '' };
@@ -173,6 +175,8 @@
   function showHelp() {
     const body =
       '<div class="help-body">' +
+      '<div class="help-sec"><b>竞品库：先看清对标在发什么</b>' +
+      '<p>写母稿之前，去「竞品库」看看同赛道账号最近发了什么：<b>内容动态</b>记录对方的爆款（标题、链接、赞评藏、你的判断），<b>粉丝快照</b>每周记一次看增长。刷到值得研究的操作就记一条，攒下来就是你的选题库。</p></div>' +
       '<div class="help-sec"><b>这是一稿多发工具</b>' +
       '<p>核心动线四步：<b>写母稿</b>（AI 文案台生成或粘贴）→ <b>适配账号</b>（勾选各平台账号，按每个号的定位/受众/语气自动改写成对应版本）→ <b>核实后排期</b>（适配版默认「未就绪」，发布管理里逐项检查）→ <b>标记发布</b>（点「发了」记下发布时间，可回填链接与数据）。</p></div>' +
       '<div class="help-sec"><b>账号定位是改写质量的源头</b>' +

@@ -283,6 +283,15 @@
       }
       d.version = 10;
     }
+    /* v11：竞品库——新增 competitors 表（账号级追踪 + 内容动态 posts），
+       老数据补空数组 */
+    if (!d.version || d.version < 11) {
+      if (!Array.isArray(d.competitors)) d.competitors = [];
+      (d.competitors || []).forEach(function (c) {
+        if (!Array.isArray(c.posts)) c.posts = [];
+      });
+      d.version = 11;
+    }
     return d;
   }
   MW.migrate = migrate;
@@ -296,6 +305,7 @@
            只补空数组，不动已有数据。 */
         if (!Array.isArray(db.accounts)) db.accounts = [];
         if (!Array.isArray(db.contents)) db.contents = [];
+        if (!Array.isArray(db.competitors)) db.competitors = [];
         if (!db.settings || typeof db.settings !== 'object') db.settings = {};
         if (!db.settings.ai) db.settings.ai = { baseUrl: '', apiKey: '', model: '', provider: '' };
         if (!db.settings.about) db.settings.about = sellerAbout();
@@ -464,7 +474,7 @@
     const d1 = MW.addDays(t, 1), d2 = MW.addDays(t, 2), d3 = MW.addDays(t, 3);
     const mId = 'ct_master_demo';
     return {
-      version: 10,
+      version: 11,
       accounts: [
         { id: 'acc_xhs', platform: 'xhs', accountId: 'acha_kitchen', name: '阿茶的手作厨房', style: '温暖实用风',
           positioning: '手作教程与厨房好物分享，教普通人用零碎时间做点小东西',
@@ -520,6 +530,42 @@
           metrics: { views: 8600, likes: 512, comments: 74, collects: 301, shares: 41, newFollowers: 52 },
           checks: { copy: true, asset: true, tag: true, time: true }, url: '', publishedAt: MW.addDays(t, -3),
           note: '', createdAt: MW.addDays(t, -8) }
+      ],
+      competitors: [
+        { id: 'cp_l1', platform: 'xhs', name: '馒家常', accountId: 'man_jia', category: '手作面食', followers: 42300, freq: '日更',
+          level: '核心对标',
+          strategy: '一次只教一个手法，封面全是成品特写加手写标题；评论区置顶「配方比例表」引导收藏',
+          snapshots: [{ date: MW.addDays(t, -35), followers: 38900 }, { date: MW.addDays(t, -21), followers: 40800 }, { date: MW.addDays(t, -7), followers: 42300 }],
+          updatedAt: MW.addDays(t, -2),
+          posts: [
+            { id: 'cp_l1p1', title: '不用揉面的懒人馒头，发酵看这篇就够了', link: 'https://www.xiaohongshu.com/explore/demo11', publishedAt: MW.addDays(t, -5), likes: 12600, comments: 486, saves: 8900, note: '收藏是点赞的 7 成——教程类刚需，用户当资料存。我改月饼盒那篇时也该引导「收藏防走丢」' },
+            { id: 'cp_l1p2', title: '剩米饭别倒，3 步变成锅巴', link: 'https://www.xiaohongshu.com/explore/demo12', publishedAt: MW.addDays(t, -11), likes: 7300, comments: 233, saves: 4100, note: '「别倒」开头制造轻微损失厌恶，厨房号百试不爽的钩子' }
+          ] },
+        { id: 'cp_l2', platform: 'dy', name: '烘焙小分队', accountId: 'baking_squad', category: '烘焙教程', followers: 186000, freq: '日更',
+          level: '核心对标',
+          strategy: '沉浸式制作过程加翻车瞬间，标题带结果承诺；小黄车挂原料套装，内容即货架',
+          snapshots: [{ date: MW.addDays(t, -35), followers: 171000 }, { date: MW.addDays(t, -21), followers: 179500 }, { date: MW.addDays(t, -7), followers: 186000 }],
+          updatedAt: MW.addDays(t, -3),
+          posts: [
+            { id: 'cp_l2p1', title: '第一次做巴斯克就成功，关键只有 3 点', link: 'https://www.douyin.com/video/demo13', publishedAt: MW.addDays(t, -4), likes: 68000, comments: 2400, saves: 21000, note: '「第一次就成功」直击新手恐惧；3 点结构让完播率很高。我的抖音版可以学这个开头' },
+            { id: 'cp_l2p2', title: '烤箱不预热会怎样？我替你试了', link: 'https://www.douyin.com/video/demo14', publishedAt: MW.addDays(t, -9), likes: 41000, comments: 3100, saves: 9600, note: '替观众做实验，评论区自然吵起来——互动权重吃满' }
+          ] },
+        { id: 'cp_l3', platform: 'xhs', name: '一人食日记', accountId: 'solo_meal', category: '一人食记录', followers: 28600, freq: '周3更',
+          level: '一般关注',
+          strategy: '独居生活叙事加食谱，图片统一暖色调；不追热点，靠搜索长尾稳涨',
+          snapshots: [{ date: MW.addDays(t, -35), followers: 27100 }, { date: MW.addDays(t, -21), followers: 27800 }, { date: MW.addDays(t, -7), followers: 28600 }],
+          updatedAt: MW.addDays(t, -6),
+          posts: [
+            { id: 'cp_l3p1', title: '独居第 5 年，我的 10 平米厨房好物全公开', link: 'https://www.xiaohongshu.com/explore/demo15', publishedAt: MW.addDays(t, -8), likes: 5900, comments: 421, saves: 6300, note: '合集加「全公开」句式，长尾搜索流量稳定；好物类适合接商单' }
+          ] },
+        { id: 'cp_l4', platform: 'dy', name: '旧物改造所', accountId: 're_make_lab', category: '旧物改造', followers: 94200, freq: '周2更',
+          level: '一般关注',
+          strategy: '改造前后强对比，卡点音乐卡节奏；简介挂闲鱼号收旧物，评论区抽人免费改',
+          snapshots: [{ date: MW.addDays(t, -35), followers: 88000 }, { date: MW.addDays(t, -21), followers: 91500 }, { date: MW.addDays(t, -7), followers: 94200 }],
+          updatedAt: MW.addDays(t, -10),
+          posts: [
+            { id: 'cp_l4p1', title: '奶奶的顶针变首饰盒，评论区看哭了', link: 'https://www.douyin.com/video/demo16', publishedAt: MW.addDays(t, -6), likes: 52000, comments: 6800, saves: 12000, note: '旧物加亲情叙事，情绪价值拉满；改造类账号涨粉最快的内容类型' }
+          ] }
       ],
       settings: {
         ai: { baseUrl: '', apiKey: '', model: '', provider: '' },

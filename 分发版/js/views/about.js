@@ -7,7 +7,7 @@
   const MW = (window.MW = window.MW || {});
 
   /* 软件版本号：随安装包一起分发，买家反馈问题时先看这里 */
-  MW.VERSION = '1.0.0';
+  MW.VERSION = '1.1.0';
   MW.REPO_URL = 'https://github.com/kxbbw81-glitch/zimeitigongzuotai';
 
   /* ---------- 授权码（轻量本地校验） ----------
@@ -165,6 +165,7 @@
         sub: 'v' + MW.VERSION,
         body:
           '<div class="ab-changelog">' +
+            '<div class="ab-cl-item"><b>v1.1.0</b><span>新增「竞品库」：关注同赛道账号，记录粉丝快照与增长趋势；记录竞品内容动态（标题 / 链接 / 赞评藏 / 观察笔记），跨竞品动态流按发布日期汇总。侧栏「侦察」组进入，快速创建菜单可一键关注。</span></div>' +
             '<div class="ab-cl-item"><b>v1.0.0</b><span>首个正式版：一稿多发（母稿 → 按账号定位适配多平台版本）、发布日历、发布管理（四项检查清单）、账号矩阵（定位驱动改写）、AI 接口（配置后大模型改写，未配置生成本地初稿）</span></div>' +
           '</div>' +
           '<div class="form-hint" style="margin-top:10px">完整更新记录在 GitHub 仓库可查。</div>',

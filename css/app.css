@@ -785,6 +785,47 @@ select { cursor: pointer; appearance: none; background-image: url("data:image/sv
 .compare-q { font-size: 11.5px; color: var(--text3); }
 .compare-a { font-size: 12.5px; color: var(--text2); line-height: 1.7; margin-top: 4px; }
 
+/* ---------- 竞品内容动态 ---------- */
+.cp-posts-btn { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; line-height: 1.3; }
+.cp-posts-btn b { color: var(--primary); }
+.cp-posts-last { font-size: 10.5px; color: var(--text3); font-weight: 400; }
+.cpd { padding: 2px 0 6px; }
+.cpd-head { margin-bottom: 12px; }
+.cpd-name { font-size: 16px; font-weight: 700; display: flex; align-items: center; }
+.cpd-meta { display: flex; align-items: center; gap: 8px; margin-top: 7px; flex-wrap: wrap; }
+.cpd-cat { font-size: 12px; background: var(--bg2); border-radius: 6px; padding: 2px 8px; color: var(--text2); }
+.cpd-id { font-size: 11.5px; color: var(--text3); }
+.cpd-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; background: var(--bg2); border-radius: 11px; padding: 12px 14px; }
+.cpd-stat { display: flex; flex-direction: column; gap: 2px; }
+.cpd-stat b { font-size: 16px; font-weight: 700; }
+.cpd-stat span { font-size: 11px; color: var(--text3); }
+.cpd-trend { margin-top: 12px; }
+.cpd-strat { margin-top: 12px; }
+.cpd-sec-title { font-size: 12px; font-weight: 600; color: var(--text3); margin-bottom: 7px; display: flex; align-items: center; gap: 5px; }
+.cpd-strat-text { font-size: 13px; color: var(--text2); line-height: 1.75; background: var(--bg2); border-radius: 10px; padding: 10px 13px; }
+.cpd-posts-title { margin-top: 16px; padding-top: 13px; border-top: 1px solid var(--line2); }
+.cpd-empty { font-size: 12.5px; color: var(--text3); line-height: 1.7; background: var(--bg2); border-radius: 10px; padding: 14px; }
+.cpp-row { border: 1px solid var(--line2); border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; }
+.cpp-row:hover { border-color: #cfd4e6; }
+.cpp-top { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.cpp-date { font-size: 11px; color: var(--text3); font-variant-numeric: tabular-nums; flex-shrink: 0; }
+.cpp-title { font-size: 13px; font-weight: 600; color: var(--text); text-decoration: none; flex: 1; min-width: 0; }
+a.cpp-title:hover { color: var(--primary); }
+.cpp-nums { font-size: 11px; color: var(--text3); font-variant-numeric: tabular-nums; flex-shrink: 0; }
+.cpp-note { font-size: 12px; color: var(--text2); line-height: 1.65; margin-top: 6px; background: var(--bg2); border-radius: 8px; padding: 7px 10px; }
+.cpp-ops { display: flex; gap: 4px; margin-top: 7px; opacity: 0; transition: opacity .15s; }
+.cpp-row:hover .cpp-ops { opacity: 1; }
+.cf-list { display: flex; flex-direction: column; }
+.cf-row { display: flex; align-items: baseline; gap: 10px; padding: 9px 4px; border-bottom: 1px solid var(--line2); cursor: pointer; flex-wrap: wrap; }
+.cf-row:last-child { border-bottom: none; }
+.cf-row:hover { background: var(--bg2); }
+.cf-who { font-size: 12px; font-weight: 700; color: var(--primary); flex-shrink: 0; min-width: 90px; }
+.cf-date { font-size: 11px; color: var(--text3); font-variant-numeric: tabular-nums; flex-shrink: 0; }
+.cf-title { font-size: 13px; color: var(--text); text-decoration: none; flex: 1; min-width: 180px; }
+a.cf-title:hover { color: var(--primary); }
+.cf-nums { font-size: 11px; color: var(--text3); font-variant-numeric: tabular-nums; flex-shrink: 0; }
+.cf-note { font-size: 11.5px; color: var(--text2); flex-basis: 100%; padding-left: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
 /* ---------- 数据复盘 ---------- */
 .goal-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 12px; }
 .goal-item { background: var(--bg2); border-radius: 11px; padding: 12px 14px; }
